@@ -1,0 +1,289 @@
+// Grantispro — Core Data Model
+// Multi-tenant scholarship & donor management platform
+// Tenant isolation via tenantId on every row (Postgres RLS applied at DB level later)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// TENANCY & USERS
+// ---------------------------------------------------------------------------
+
+enum InstitutionType {
+  PRIVATE
+  ISLAMIC
+  SEMI_GOVT
+  GOVT_FUNDED
+  WAQF
+  TRUST
+  NGO
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  INSTITUTION_ADMIN
+  OFFICER
+  FINANCE
+  DONOR
+}
+
+model Tenant {
+  id               String          @id @default(cuid())
+  name             String
+  slug             String          @unique
+  institutionType  InstitutionType
+  logoUrl          String?
+  primaryColor     String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  users            User[]
+  programs         ScholarshipProgram[]
+  funds            Fund[]
+  donors           Donor[]
+  auditLogs        AuditLog[]
+}
+
+model User {
+  id           String    @id @default(cuid())
+  tenantId     String
+  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  email        String    @unique
+  passwordHash String?
+  name         String
+  role         UserRole
+  createdAt    DateTime  @default(now())
+
+  reviewScores ReviewScore[]
+}
+
+// ---------------------------------------------------------------------------
+// SCHOLARSHIP PROGRAMS & DYNAMIC CRITERIA ENGINE
+// ---------------------------------------------------------------------------
+
+enum CriteriaLogic {
+  ALL   // AND
+  ANY   // OR
+  SCORE // weighted scoring, admin sets a threshold
+}
+
+enum CriteriaFieldType {
+  NUMBER
+  TEXT
+  BOOLEAN
+  SELECT
+}
+
+model ScholarshipProgram {
+  id            String        @id @default(cuid())
+  tenantId      String
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  name          String
+  description   String?
+  isActive      Boolean       @default(true)
+  requiresReview Boolean      @default(true)
+  logicType     CriteriaLogic @default(ALL)
+  scoreThreshold Int?
+  createdAt     DateTime      @default(now())
+
+  criteriaBlocks CriteriaBlock[]
+  applications   Application[]
+  funds          Fund[]        @relation("ProgramFunds")
+}
+
+// A single reusable, admin-defined eligibility rule (no hardcoded logic)
+model CriteriaBlock {
+  id          String            @id @default(cuid())
+  programId   String
+  program     ScholarshipProgram @relation(fields: [programId], references: [id])
+  label       String            // e.g. "Household income below threshold"
+  fieldType   CriteriaFieldType
+  operator    String            // e.g. "lt", "gt", "eq", "in"
+  value       String            // stored as string, cast per fieldType
+  weight      Int               @default(1) // used when logicType = SCORE
+  createdAt   DateTime          @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// APPLICANTS & APPLICATIONS
+// ---------------------------------------------------------------------------
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  AWARDED
+  REJECTED
+  RENEWED
+}
+
+model Applicant {
+  id          String   @id @default(cuid())
+  tenantId    String
+  fullName    String
+  dateOfBirth DateTime?
+  guardianName String?
+  contactEmail String?
+  contactPhone String?
+  metadata    Json?    // flexible bag for custom criteria fields (income, category, etc.)
+  createdAt   DateTime @default(now())
+
+  applications Application[]
+}
+
+model Application {
+  id          String             @id @default(cuid())
+  tenantId    String
+  programId   String
+  program     ScholarshipProgram @relation(fields: [programId], references: [id])
+  applicantId String
+  applicant   Applicant          @relation(fields: [applicantId], references: [id])
+  status      ApplicationStatus  @default(SUBMITTED)
+  eligibilityScore Int?
+  submittedAt DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  documents    Document[]
+  reviewScores ReviewScore[]
+  award        Award?
+}
+
+model Document {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  label         String      // e.g. "Income Certificate", "Guardian ID"
+  fileUrl       String
+  uploadedAt    DateTime    @default(now())
+}
+
+model ReviewScore {
+  id            String      @id @default(cuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id])
+  reviewerId    String
+  reviewer      User        @relation(fields: [reviewerId], references: [id])
+  score         Int
+  comments      String?
+  createdAt     DateTime    @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// FUNDS, DONORS & SPONSORSHIP
+// ---------------------------------------------------------------------------
+
+enum FundType {
+  GENERAL
+  RESTRICTED
+  DONOR_DIRECTED
+}
+
+enum DonorType {
+  INDIVIDUAL
+  CORPORATE_CSR
+  GOVERNMENT_GRANT
+  FOREIGN_FUNDING
+}
+
+enum SponsorshipTargetType {
+  STUDENT
+  CLASS
+  INSTITUTE
+  PROJECT
+  FUND
+}
+
+model Fund {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  name        String
+  type        FundType
+  balance     Decimal   @default(0) @db.Decimal(14, 2)
+  currency    String    @default("USD")
+  createdAt   DateTime  @default(now())
+
+  programs      ScholarshipProgram[] @relation("ProgramFunds")
+  allocations   SponsorshipLink[]
+  disbursements Disbursement[]
+}
+
+model Donor {
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  name        String
+  type        DonorType
+  contactEmail String?
+  createdAt   DateTime  @default(now())
+
+  pledges         Pledge[]
+  sponsorshipLinks SponsorshipLink[]
+}
+
+model Pledge {
+  id          String   @id @default(cuid())
+  donorId     String
+  donor       Donor    @relation(fields: [donorId], references: [id])
+  amount      Decimal  @db.Decimal(14, 2)
+  currency    String   @default("USD")
+  committedAt DateTime @default(now())
+  receivedAt  DateTime?
+}
+
+// Links a donor's contribution to a specific target: a student, class, institute, project, or general fund
+model SponsorshipLink {
+  id          String                @id @default(cuid())
+  donorId     String
+  donor       Donor                 @relation(fields: [donorId], references: [id])
+  fundId      String
+  fund        Fund                  @relation(fields: [fundId], references: [id])
+  targetType  SponsorshipTargetType
+  targetId    String?               // applicantId / classId / instituteId / projectId — nullable for FUND-level
+  createdAt   DateTime              @default(now())
+}
+
+model Award {
+  id            String      @id @default(cuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id])
+  fundId        String
+  amount        Decimal     @db.Decimal(14, 2)
+  currency      String      @default("USD")
+  awardedAt     DateTime    @default(now())
+
+  disbursements Disbursement[]
+}
+
+model Disbursement {
+  id          String   @id @default(cuid())
+  awardId     String
+  award       Award    @relation(fields: [awardId], references: [id])
+  fundId      String
+  fund        Fund     @relation(fields: [fundId], references: [id])
+  amount      Decimal  @db.Decimal(14, 2)
+  scheduledAt DateTime
+  paidAt      DateTime?
+  status      String   @default("SCHEDULED") // SCHEDULED | PAID | FAILED
+}
+
+// ---------------------------------------------------------------------------
+// AUDIT
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  actorId   String?
+  action    String   // e.g. "AWARD_CREATED", "CRITERIA_UPDATED"
+  entity    String   // e.g. "Application:abc123"
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
