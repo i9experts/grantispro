@@ -107,7 +107,24 @@ model CriteriaBlock {
   operator    String            // e.g. "lt", "gt", "eq", "in"
   value       String            // stored as string, cast per fieldType
   weight      Int               @default(1) // used when logicType = SCORE
+  requiredDocumentLabel String? // e.g. "Income certificate" — suggested when created from a preset
   createdAt   DateTime          @default(now())
+}
+
+// Shared, seedable library of common scholarship eligibility rules
+// (academic merit, financial need, demographic, institutional, talent, geographic).
+// Not tenant-scoped — every institution sees the same starting library.
+model PresetCriteria {
+  id                    String            @id @default(cuid())
+  category              String            // e.g. "Academic merit", "Financial need"
+  label                 String
+  fieldType             CriteriaFieldType
+  operator              String
+  defaultValue          String
+  defaultWeight         Int               @default(1)
+  suggestedDocumentLabel String?          // e.g. "Income certificate", null if no document implied
+  sortOrder             Int               @default(0)
+  createdAt             DateTime          @default(now())
 }
 
 // ---------------------------------------------------------------------------

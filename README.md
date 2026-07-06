@@ -77,26 +77,36 @@ Propagation is usually 15 minutes–a few hours. Once it resolves, update
 **Built:**
 - Full Prisma data model: Tenant, User, ScholarshipProgram, CriteriaBlock,
   Applicant, Application, Document, ReviewScore, Fund, Donor, Pledge,
-  SponsorshipLink, Award, Disbursement, AuditLog
+  SponsorshipLink, Award, Disbursement, AuditLog, PresetCriteria
 - Tailwind configured with the Grantispro brand palette
 - **Auth:** NextAuth with credentials provider, JWT sessions carrying
   `tenantId` + `role` (no database adapter needed — kept the schema lean)
 - **Tenant onboarding:** `/onboarding` creates a Tenant + its first
   Institution Admin in one transaction, with an audit log entry
 - **Login:** `/login` via NextAuth credentials
-- **Protected dashboard:** `/dashboard` (middleware-gated), confirms
-  session + tenant context resolve correctly
-- Landing page with CTAs into onboarding/login
+- **Protected dashboard:** `/dashboard` (middleware-gated)
+- **Dynamic criteria builder:** `/dashboard/programs` (list), `/dashboard/programs/new`
+  (step 1: name, description, logic type — ALL/ANY/weighted score),
+  `/dashboard/programs/[id]/criteria` (step 2: add criteria blocks from a
+  shared preset library or blank, live plain-English eligibility preview,
+  optional "requires supporting document" per criterion). Role-gated to
+  Institution Admin / Officer.
+- **Preset criteria library:** 16 presets across 6 categories (academic
+  merit, financial need, demographic/social, institutional relationship,
+  talent/service, geographic), seeded via `prisma/seed.ts`, re-seeded
+  automatically on every Railway deploy via `preDeployCommand`
 
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
-1. Dynamic criteria builder UI (admin composes `CriteriaBlock`s per program)
-2. Application intake form (auto-generated from a program's criteria set)
-3. Review/scoring queue for officers
-4. Fund & donor management screens + sponsorship linking
-5. Donor transparency dashboard
-6. CSV/Excel export for all core entities
-7. Inviting additional users (Officer/Finance roles) into an existing tenant
+1. Application intake form (auto-generated from a program's criteria set,
+   prompting for the "required document" uploads flagged in the criteria)
+2. Review/scoring queue for officers
+3. Fund & donor management screens + sponsorship linking
+4. Donor transparency dashboard
+5. CSV/Excel export for all core entities
+6. Inviting additional users (Officer/Finance roles) into an existing tenant
    — today, onboarding only creates the first Institution Admin
+7. Applicant-side eligibility evaluation (currently criteria are defined
+   but nothing auto-scores an applicant against them yet)
 
 See the PRD (`PRD_Scholarship_Donor_Management_Platform.md`, shared separately)
 for full feature detail on each of these.

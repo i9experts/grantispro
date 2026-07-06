@@ -24,9 +24,14 @@ export default async function DashboardPage() {
       <section className="mt-12 max-w-2xl">
         <h2 className="text-lg font-semibold text-plum">Welcome, {session.user.name}.</h2>
         <p className="mt-2 text-plum/70">
-          Your tenant workspace ({tenant?.name}) is live. Next up: the dynamic
-          criteria builder, so you can define your first scholarship program.
+          Your tenant workspace ({tenant?.name}) is live.
         </p>
+        <a
+          href="/dashboard/programs"
+          className="inline-block mt-6 bg-plum text-ivory rounded-lg px-5 py-2.5 font-medium hover:bg-plum-deep transition"
+        >
+          Scholarship programs
+        </a>
       </section>
     </main>
   );
