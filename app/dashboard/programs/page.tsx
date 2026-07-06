@@ -52,28 +52,40 @@ export default async function ProgramsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {programs.map((p) => (
-              <Link
+              <div
                 key={p.id}
-                href={`/dashboard/programs/${p.id}/criteria`}
-                className="bg-white/60 border border-plum/10 rounded-xl p-5 flex items-center justify-between hover:border-plum/30 transition"
+                className="bg-white/60 border border-plum/10 rounded-xl p-5"
               >
-                <div>
-                  <p className="font-medium text-plum">{p.name}</p>
-                  <p className="text-sm text-plum/60 mt-0.5">
-                    {logicLabel[p.logicType]} &middot; {p._count.criteriaBlocks} criteria &middot;{" "}
-                    {p._count.applications} applications
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-plum">{p.name}</p>
+                    <p className="text-sm text-plum/60 mt-0.5">
+                      {logicLabel[p.logicType]} &middot; {p._count.criteriaBlocks} criteria &middot;{" "}
+                      {p._count.applications} applications
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs px-2.5 py-1 rounded-full ${
+                      p.isActive
+                        ? "bg-emerald/10 text-emerald-dark"
+                        : "bg-plum/10 text-plum/60"
+                    }`}
+                  >
+                    {p.isActive ? "Active" : "Inactive"}
+                  </span>
                 </div>
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full ${
-                    p.isActive
-                      ? "bg-emerald/10 text-emerald-dark"
-                      : "bg-plum/10 text-plum/60"
-                  }`}
-                >
-                  {p.isActive ? "Active" : "Inactive"}
-                </span>
-              </Link>
+                <div className="mt-3 flex gap-4 text-sm">
+                  <Link href={`/dashboard/programs/${p.id}/criteria`} className="text-plum/70 hover:text-plum">
+                    Edit criteria
+                  </Link>
+                  <Link href={`/dashboard/programs/${p.id}/applications`} className="text-plum/70 hover:text-plum">
+                    View applications
+                  </Link>
+                  <Link href={`/apply/${p.id}`} target="_blank" className="text-emerald-dark hover:underline">
+                    Public application link
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         )}

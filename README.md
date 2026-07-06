@@ -95,18 +95,36 @@ Propagation is usually 15 minutes–a few hours. Once it resolves, update
   merit, financial need, demographic/social, institutional relationship,
   talent/service, geographic), seeded via `prisma/seed.ts`, re-seeded
   automatically on every Railway deploy via `preDeployCommand`
+- **Public application intake:** `/apply/[programId]` — no login required.
+  Renders applicant basics plus one question per criteria block, lists
+  any documents the program will eventually need (upload itself isn't
+  wired up yet — see below), and submits to a public API route
+- **Eligibility engine:** `lib/eligibility.ts` evaluates a submitted
+  application against its program's criteria blocks using whichever logic
+  type the admin configured (ALL / ANY / weighted SCORE). By default,
+  auto-eligibility only pre-sorts the review queue — it does not
+  auto-reject unless a program explicitly has `requiresReview: false`
+- **Officer review queue:** `/dashboard/programs/[id]/applications` —
+  lists applicants sorted by eligibility score, expandable to show their
+  submitted answers, with a status dropdown (Submitted / Under review /
+  Shortlisted / Awarded / Rejected / Renewed)
+
+**Known gap, called out on purpose:** document upload is not implemented.
+The application form tells applicants what documents will be needed but
+doesn't accept file uploads yet — that needs Cloudflare R2 wired in first
+(credentials, upload API route, storage on the `Document` model). Rather
+than build a fake upload button, the form is honest about this being
+"coming soon."
 
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
-1. Application intake form (auto-generated from a program's criteria set,
-   prompting for the "required document" uploads flagged in the criteria)
-2. Review/scoring queue for officers
-3. Fund & donor management screens + sponsorship linking
-4. Donor transparency dashboard
-5. CSV/Excel export for all core entities
-6. Inviting additional users (Officer/Finance roles) into an existing tenant
+1. Cloudflare R2 document upload (see gap above)
+2. Fund & donor management screens + sponsorship linking
+3. Donor transparency dashboard
+4. CSV/Excel export for all core entities
+5. Inviting additional users (Officer/Finance roles) into an existing tenant
    — today, onboarding only creates the first Institution Admin
-7. Applicant-side eligibility evaluation (currently criteria are defined
-   but nothing auto-scores an applicant against them yet)
+6. A real visual design pass — current UI is functional, unstyled Tailwind
+   defaults. Deliberately deferred; flagged so it doesn't get forgotten.
 
 See the PRD (`PRD_Scholarship_Donor_Management_Platform.md`, shared separately)
 for full feature detail on each of these.
