@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireSession, canManagePrograms } from "@/lib/session-helpers";
 
@@ -9,6 +10,9 @@ const createDonorSchema = z.object({
   name: z.string().min(2),
   type: z.enum(["INDIVIDUAL", "CORPORATE_CSR", "GOVERNMENT_GRANT", "FOREIGN_FUNDING"]),
   contactEmail: z.string().email().optional().or(z.literal("")),
+  createLogin: z.boolean().optional(),
+  loginEmail: z.string().email().optional(),
+  loginPassword: z.string().min(8).optional(),
 });
 
 export async function GET() {
@@ -40,13 +44,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const donor = await prisma.donor.create({
-    data: {
-      tenantId: session.user.tenantId,
-      name: parsed.data.name,
-      type: parsed.data.type,
-      contactEmail: parsed.data.contactEmail || null,
-    },
+  const { name, type, contactEmail, createLogin, loginEmail, loginPassword } = parsed.data;
+
+  if (createLogin) {
+    if (!loginEmail || !loginPassword) {
+      return NextResponse.json(
+        { error: { loginEmail: ["Email and password are required to create a portal login"] } },
+        { status: 400 }
+      );
+    }
+    const existing = await prisma.user.findUnique({ where: { email: loginEmail } });
+    if (existing) {
+      return NextResponse.json(
+        { error: { loginEmail: ["An account with this email already exists"] } },
+        { status: 409 }
+      );
+    }
+  }
+
+  const donor = await prisma.$transaction(async (tx) => {
+    const created = await tx.donor.create({
+      data: {
+        tenantId: session.user.tenantId,
+        name,
+        type,
+        contactEmail: contactEmail || null,
+      },
+    });
+
+    if (createLogin && loginEmail && loginPassword) {
+      const passwordHash = await bcrypt.hash(loginPassword, 10);
+      await tx.user.create({
+        data: {
+          tenantId: session.user.tenantId,
+          email: loginEmail,
+          passwordHash,
+          name,
+          role: "DONOR",
+          donorId: created.id,
+        },
+      });
+    }
+
+    return created;
   });
 
   return NextResponse.json({ id: donor.id }, { status: 201 });

@@ -15,6 +15,9 @@ export default function NewDonorPage() {
   const [name, setName] = useState("");
   const [type, setType] = useState("INDIVIDUAL");
   const [contactEmail, setContactEmail] = useState("");
+  const [createLogin, setCreateLogin] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
 
@@ -26,7 +29,14 @@ export default function NewDonorPage() {
     const res = await fetch("/api/donors", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, type, contactEmail }),
+      body: JSON.stringify({
+        name,
+        type,
+        contactEmail,
+        createLogin,
+        loginEmail: createLogin ? loginEmail : undefined,
+        loginPassword: createLogin ? loginPassword : undefined,
+      }),
     });
 
     setLoading(false);
@@ -91,6 +101,45 @@ export default function NewDonorPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="border-t border-plum/10 pt-4">
+            <label className="flex items-center gap-2 text-sm text-plum">
+              <input
+                type="checkbox"
+                checked={createLogin}
+                onChange={(e) => setCreateLogin(e.target.checked)}
+              />
+              Create a portal login for this donor
+            </label>
+            <p className="text-xs text-plum/50 mt-1">
+              Lets the donor sign in and see their own contributions and impact.
+            </p>
+
+            {createLogin && (
+              <div className="mt-3 space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-plum">Login email</label>
+                  <input
+                    type="email"
+                    className="mt-1 w-full rounded-lg border border-plum/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald"
+                    value={loginEmail}
+                    onChange={(e) => setLoginEmail(e.target.value)}
+                  />
+                  {errors.loginEmail && <p className="text-xs text-red-600 mt-1">{errors.loginEmail[0]}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-plum">Temporary password</label>
+                  <input
+                    type="password"
+                    className="mt-1 w-full rounded-lg border border-plum/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    minLength={8}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           <button

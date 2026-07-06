@@ -115,6 +115,20 @@ Propagation is usually 15 minutes–a few hours. Once it resolves, update
   summary plus a preview of what the donor will eventually see). Creates
   `Donor` + `Pledge` + `SponsorshipLink` together, creating a new `Fund`
   inline if needed.
+- **Donor transparency portal:** `/portal` — a real donor-facing login,
+  separate from the staff dashboard. Adding a donor now has an optional
+  "create a portal login" step; that donor can then sign in (same
+  `/login` page, same NextAuth flow — middleware routes by role) and see
+  their own total contributed, active sponsorships, and pledge history.
+  Staff can never end up on `/portal` and donors can never end up on
+  `/dashboard` — middleware enforces this both ways.
+
+**Privacy decision made here, flagging since the original PRD listed this
+as an open question:** donors see a sponsored student's first name and
+last-initial only (e.g. "Ayesha K."), never full name or other PII. This
+is a conservative default, not a configurable setting yet — an
+institution that wants different behavior would need that added as a
+real feature (e.g. a consent flag on `Applicant`).
 
 **Known gap, called out on purpose:** document upload is not implemented.
 The application form tells applicants what documents will be needed but
@@ -139,15 +153,14 @@ specified):**
 
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
-2. Donor transparency dashboard (the donor-facing view — right now the
-   "what the donor will see" panel only exists inside the admin's review
-   step, not as something an actual donor can log into and view)
-3. CSV/Excel export for all core entities
-4. Inviting additional users (Officer/Finance roles) into an existing tenant
-   — today, onboarding only creates the first Institution Admin
-5. A real visual design pass — current UI is functional, unstyled Tailwind
+2. CSV/Excel export for all core entities
+3. Inviting additional staff users (Officer/Finance roles) into an
+   existing tenant — today, onboarding only creates the first Institution
+   Admin, and donor portal logins are the only other invite path that
+   exists
+4. A real visual design pass — current UI is functional, unstyled Tailwind
    defaults. Deliberately deferred; flagged so it doesn't get forgotten.
-6. Pledge received/reconciliation tracking (see decision above)
+5. Pledge received/reconciliation tracking (see decision above)
 
 See the PRD (`PRD_Scholarship_Donor_Management_Platform.md`, shared separately)
 for full feature detail on each of these.

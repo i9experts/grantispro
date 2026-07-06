@@ -58,6 +58,8 @@ model User {
   passwordHash String?
   name         String
   role         UserRole
+  donorId      String?   // set only when role = DONOR, scopes portal access to one Donor
+  donor        Donor?    @relation(fields: [donorId], references: [id])
   createdAt    DateTime  @default(now())
 
   reviewScores ReviewScore[]
@@ -242,6 +244,7 @@ model Donor {
 
   pledges         Pledge[]
   sponsorshipLinks SponsorshipLink[]
+  users           User[]
 }
 
 model Pledge {
