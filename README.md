@@ -108,6 +108,13 @@ Propagation is usually 15 minutes–a few hours. Once it resolves, update
   lists applicants sorted by eligibility score, expandable to show their
   submitted answers, with a status dropdown (Submitted / Under review /
   Shortlisted / Awarded / Rejected / Renewed)
+- **Funds and donors:** `/dashboard/funds` (list), `/dashboard/donors`
+  (list + add), `/dashboard/donors/new` then `/dashboard/donors/[id]/sponsor`
+  (3-step wizard: pledge amount/currency/fund → sponsorship target
+  student/class/institute/project/fund-only → review with an internal
+  summary plus a preview of what the donor will eventually see). Creates
+  `Donor` + `Pledge` + `SponsorshipLink` together, creating a new `Fund`
+  inline if needed.
 
 **Known gap, called out on purpose:** document upload is not implemented.
 The application form tells applicants what documents will be needed but
@@ -116,15 +123,31 @@ doesn't accept file uploads yet — that needs Cloudflare R2 wired in first
 than build a fake upload button, the form is honest about this being
 "coming soon."
 
+**Decisions made building this (flagging since they weren't explicitly
+specified):**
+- Donor + pledge + sponsorship link creation happens as one combined flow
+  rather than three separate independent actions — faster for the common
+  case, easier to change to separate flows later if needed.
+- Any `Applicant` in the tenant can be a sponsorship target, not just ones
+  who've received an `Award` — lets a donor pre-commit to a student before
+  the awarding process finishes.
+- **Fund balance currently reflects total pledged/committed amounts, not
+  confirmed bank receipt.** `Pledge.receivedAt` exists in the schema for
+  this but nothing sets it yet — a "mark pledge as received" reconciliation
+  step (which would then increment the fund balance instead of doing it
+  at pledge-creation time) is real future work, not done here.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
-2. Fund & donor management screens + sponsorship linking
-3. Donor transparency dashboard
-4. CSV/Excel export for all core entities
-5. Inviting additional users (Officer/Finance roles) into an existing tenant
+2. Donor transparency dashboard (the donor-facing view — right now the
+   "what the donor will see" panel only exists inside the admin's review
+   step, not as something an actual donor can log into and view)
+3. CSV/Excel export for all core entities
+4. Inviting additional users (Officer/Finance roles) into an existing tenant
    — today, onboarding only creates the first Institution Admin
-6. A real visual design pass — current UI is functional, unstyled Tailwind
+5. A real visual design pass — current UI is functional, unstyled Tailwind
    defaults. Deliberately deferred; flagged so it doesn't get forgotten.
+6. Pledge received/reconciliation tracking (see decision above)
 
 See the PRD (`PRD_Scholarship_Donor_Management_Platform.md`, shared separately)
 for full feature detail on each of these.

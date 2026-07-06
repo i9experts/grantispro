@@ -32,6 +32,12 @@ export default async function DashboardPage() {
         >
           Scholarship programs
         </a>
+        <a
+          href="/dashboard/donors"
+          className="inline-block mt-6 ml-3 border border-plum/20 text-plum rounded-lg px-5 py-2.5 font-medium hover:bg-plum/5 transition"
+        >
+          Funds and donors
+        </a>
       </section>
     </main>
   );
