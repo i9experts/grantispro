@@ -1,0 +1,33 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { redirect } from "next/navigation";
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) redirect("/login");
+
+  const tenantId = session.user.tenantId;
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+
+  return (
+    <main className="min-h-screen bg-ivory px-8 py-10">
+      <header className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-plum">
+          Grantis<span className="text-marigold-dark">pro</span>
+        </h1>
+        <span className="text-sm text-plum/60">
+          {session.user.role} · {tenant?.name}
+        </span>
+      </header>
+
+      <section className="mt-12 max-w-2xl">
+        <h2 className="text-lg font-semibold text-plum">Welcome, {session.user.name}.</h2>
+        <p className="mt-2 text-plum/70">
+          Your tenant workspace ({tenant?.name}) is live. Next up: the dynamic
+          criteria builder, so you can define your first scholarship program.
+        </p>
+      </section>
+    </main>
+  );
+}

@@ -58,31 +58,54 @@ Then in the Railway dashboard:
    railway run npx prisma migrate dev --name init
    ```
 
-## 3. Connect your Hostinger domain
+## 3. Connect grantispro.com (registered on Hostinger)
 
-In Railway: Service → Settings → Networking → **Custom Domain** → add your
-domain. Railway will give you a CNAME record. Add that CNAME in Hostinger's
-DNS panel (hPanel → Domains → DNS Zone Editor). Propagation is usually
-15 minutes–a few hours.
+In Railway: Service → Settings → Networking → **Custom Domain** → add
+`grantispro.com` (and `www.grantispro.com` if you want both). Railway will
+give you CNAME/A records.
+
+In Hostinger: hPanel → Domains → **DNS Zone Editor** for grantispro.com →
+add the records Railway gave you. Typical setup:
+- `@` (root) → A record or ALIAS/ANAME pointing at Railway's IP (Railway will specify)
+- `www` → CNAME pointing at your Railway app domain
+
+Propagation is usually 15 minutes–a few hours. Once it resolves, update
+`NEXTAUTH_URL` in Railway's environment variables to `https://grantispro.com`.
 
 ## What's built vs. what's next
 
-**Built (this scaffold):**
+**Built:**
 - Full Prisma data model: Tenant, User, ScholarshipProgram, CriteriaBlock,
   Applicant, Application, Document, ReviewScore, Fund, Donor, Pledge,
   SponsorshipLink, Award, Disbursement, AuditLog
 - Tailwind configured with the Grantispro brand palette
-- Placeholder landing page
+- **Auth:** NextAuth with credentials provider, JWT sessions carrying
+  `tenantId` + `role` (no database adapter needed — kept the schema lean)
+- **Tenant onboarding:** `/onboarding` creates a Tenant + its first
+  Institution Admin in one transaction, with an audit log entry
+- **Login:** `/login` via NextAuth credentials
+- **Protected dashboard:** `/dashboard` (middleware-gated), confirms
+  session + tenant context resolve correctly
+- Landing page with CTAs into onboarding/login
 
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
-1. Auth + role-based access (NextAuth + Prisma adapter, already in `package.json`)
-2. Tenant onboarding flow
-3. Dynamic criteria builder UI (admin composes `CriteriaBlock`s per program)
-4. Application intake form (auto-generated from a program's criteria set)
-5. Review/scoring queue for officers
-6. Fund & donor management screens + sponsorship linking
-7. Donor transparency dashboard
-8. CSV/Excel export for all core entities
+1. Dynamic criteria builder UI (admin composes `CriteriaBlock`s per program)
+2. Application intake form (auto-generated from a program's criteria set)
+3. Review/scoring queue for officers
+4. Fund & donor management screens + sponsorship linking
+5. Donor transparency dashboard
+6. CSV/Excel export for all core entities
+7. Inviting additional users (Officer/Finance roles) into an existing tenant
+   — today, onboarding only creates the first Institution Admin
 
 See the PRD (`PRD_Scholarship_Donor_Management_Platform.md`, shared separately)
 for full feature detail on each of these.
+
+## Auth note
+
+Chose **NextAuth (credentials provider, JWT sessions)** over Clerk for this
+scaffold — it's free, keeps the whole stack inside Railway/Postgres with no
+third-party auth vendor, and JWT sessions avoid needing `Account`/`Session`
+tables in the schema. Trade-off: no built-in social login or magic links —
+if you want those later, swapping in an OAuth provider inside
+`lib/auth.ts` is straightforward, or migrating to Clerk remains an option.
