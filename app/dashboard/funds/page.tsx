@@ -29,7 +29,7 @@ export default async function FundsPage() {
     <DashboardLayout tenantName={tenant?.name} userName={session.user.name ?? undefined} role={session.user.role}>
       <h1 className="font-display font-semibold text-xl text-plum mb-6">Funds</h1>
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <StatCard label="Total funds" value={funds.length} />
         <StatCard
           label="Sponsorship links"

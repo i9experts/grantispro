@@ -1,0 +1,28 @@
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="barGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#3B1F3A"/>
+    <stop offset="55%" stop-color="#0E7A57"/>
+    <stop offset="100%" stop-color="#1FAA7C"/>
+  </linearGradient>
+  <linearGradient id="barGradLight" x1="0%" y1="100%" x2="100%" y2="0%">
+    <stop offset="0%" stop-color="#F1E9DA"/>
+    <stop offset="55%" stop-color="#1FAA7C"/>
+    <stop offset="100%" stop-color="#7FE0BE"/>
+  </linearGradient>
+  <radialGradient id="darkPanel" cx="35%" cy="30%" r="90%">
+    <stop offset="0%" stop-color="#3E2440"/>
+    <stop offset="100%" stop-color="#2A1428"/>
+  </radialGradient>
+</defs>
+
+    <g>
+      <path d="M 409.41 242.58 A 154.00 154.00 0 1 1 269.42 102.59" fill="none" stroke="#3B1F3A"
+            stroke-width="38.50" stroke-linecap="round"/>
+      <line x1="154.50" y1="357.50" x2="424.00" y2="88.00"
+            stroke="url(#barGrad)" stroke-width="28.00" stroke-linecap="round"/>
+      <circle cx="154.50" cy="357.50" r="15.75" fill="#1FAA7C"/>
+      <polygon points="462.50,23.25 488.75,49.50 462.50,75.75 436.25,49.50" fill="#F4A623"/>
+      <polygon points="462.50,23.25 488.75,49.50 462.50,49.50" fill="#D6870C" opacity="0.55"/>
+    </g>
+    </svg>

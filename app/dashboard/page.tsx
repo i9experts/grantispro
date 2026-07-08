@@ -27,14 +27,14 @@ export default async function DashboardPage() {
       <h1 className="font-display font-semibold text-xl text-plum">Welcome, {session.user.name}.</h1>
       <p className="text-plum/60 mt-1">Here&apos;s what&apos;s happening at {tenant?.name}.</p>
 
-      <div className="mt-6 grid grid-cols-4 gap-4">
+      <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard label="Active programs" value={programCount} />
         <StatCard label="Total applications" value={applicationCount} />
         <StatCard label="Donors" value={donorCount} />
         <StatCard label="Funds tracked" value={`$${fundsTracked.toLocaleString()}`} tone="dark" />
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           href="/dashboard/programs"
           className="bg-white rounded-2xl p-6 shadow-card border border-plum/5 hover:border-plum/20 transition flex items-center gap-4"

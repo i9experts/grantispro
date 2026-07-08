@@ -150,11 +150,12 @@ model Applicant {
   guardianName String?
   contactEmail String?
   contactPhone String?
-  photoUrl    String?  // set once Cloudflare R2 upload is wired in
+  photoUrl    String?  // uploaded via Cloudinary
   metadata    Json?    // flexible bag for custom criteria fields (income, category, etc.)
   createdAt   DateTime @default(now())
 
   applications Application[]
+  awards       Award[]
 }
 
 model Application {
@@ -232,6 +233,7 @@ model Fund {
   programs      ScholarshipProgram[] @relation("ProgramFunds")
   allocations   SponsorshipLink[]
   disbursements Disbursement[]
+  awards        Award[]
 }
 
 model Donor {
@@ -270,14 +272,29 @@ model SponsorshipLink {
   createdAt   DateTime              @default(now())
 }
 
+enum AwardType {
+  FULL
+  PARTIAL_PERCENT
+  FIXED_AMOUNT
+}
+
 model Award {
-  id            String      @id @default(cuid())
-  applicationId String      @unique
-  application   Application @relation(fields: [applicationId], references: [id])
+  id            String       @id @default(cuid())
+  applicationId String?      @unique // set when awarded through the formal application flow
+  application   Application? @relation(fields: [applicationId], references: [id])
+  applicantId   String?      // set when granted directly to a student, bypassing the application flow
+  applicant     Applicant?   @relation(fields: [applicantId], references: [id])
   fundId        String
-  amount        Decimal     @db.Decimal(14, 2)
-  currency      String      @default("USD")
-  awardedAt     DateTime    @default(now())
+  fund          Fund         @relation(fields: [fundId], references: [id])
+  scholarshipName String
+  awardType     AwardType    @default(FULL)
+  percentValue  Int?         // used when awardType = PARTIAL_PERCENT
+  amount        Decimal      @db.Decimal(14, 2) // full fee-equivalent value for FULL/PARTIAL_PERCENT, or the fixed amount
+  currency      String       @default("USD")
+  reason        String?      // e.g. "Need-based", "Merit-based", "Sibling discount"
+  startDate     DateTime     @default(now())
+  durationMonths Int?        // null = ongoing / open-ended
+  awardedAt     DateTime     @default(now())
 
   disbursements Disbursement[]
 }

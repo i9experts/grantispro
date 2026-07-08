@@ -46,7 +46,7 @@ export default async function DonorsPage() {
     <DashboardLayout tenantName={tenant?.name} userName={session.user.name ?? undefined} role={session.user.role}>
       <h1 className="font-display font-semibold text-xl text-plum mb-6">Donors</h1>
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <StatCard label="Total donors" value={totalDonors} />
         <StatCard label="Active sponsorships" value={activeSponsorships} />
         <StatCard label="Students sponsored" value={studentsSponsored} />

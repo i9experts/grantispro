@@ -1,6 +1,7 @@
 export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+      <img src="/brand/icon.svg" alt="Grantispro" className="w-16 h-16 mb-4" />
       <h1 className="text-5xl font-bold text-plum">
         Grantis<span className="text-marigold-dark">pro</span>
       </h1>

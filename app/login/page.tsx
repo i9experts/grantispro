@@ -38,6 +38,7 @@ function LoginForm() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-ivory px-6">
       <div className="w-full max-w-sm bg-white/60 rounded-2xl shadow-sm border border-plum/10 p-8">
+        <img src="/brand/icon.svg" alt="" className="w-10 h-10 mb-2" />
         <h1 className="text-2xl font-bold text-plum">
           Grantis<span className="text-marigold-dark">pro</span>
         </h1>

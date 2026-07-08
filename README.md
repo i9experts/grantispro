@@ -189,6 +189,48 @@ specified):**
   step (which would then increment the fund balance instead of doing it
   at pledge-creation time) is real future work, not done here.
 
+**Bug fixes from user testing:**
+- Stat card grids were hardcoded to fixed column counts with no mobile
+  breakpoints, causing the "stretched"/truncated look on narrow screens.
+  Fixed with responsive Tailwind breakpoints across dashboard, donors, and
+  funds pages.
+- Sidebar had no mobile behavior at all (always rendered full-width,
+  pushing content off-screen on phones). Now: hidden by default on mobile
+  with a hamburger-triggered slide-in drawer, always visible on desktop
+  (`md:` breakpoint).
+- **Still not mobile-optimized:** the criteria builder, sponsor wizard, and
+  a few older forms still use the pre-redesign styling and haven't been
+  checked on narrow viewports. Flagging so it's not assumed done.
+
+**Real logo now in use, not just styled text:** the actual brand mark
+(from the earlier logo work) is now the favicon (`app/icon.png`) and
+appears next to the wordmark in the sidebar, landing page, and login page.
+The onboarding page and a few inner pages still show text-only — not yet
+updated.
+
+**Direct scholarship granting + auto-generated certificates:**
+`/dashboard/grants` (list) and `/dashboard/grants/new` (grant form) —
+a separate path from the public-application flow, for administratively
+granting a scholarship straight to a student (existing or newly added on
+the spot). Award type is Full / Partial % / Fixed Amount, matching the
+HifzPro reference. `Award.applicationId` is now optional and
+`Award.applicantId` was added, so an award can exist either through the
+formal application pipeline or granted directly — both paths share the
+same `Award` model.
+
+Each grant gets a **downloadable PDF certificate** (`GET
+/api/awards/[id]/certificate`, built with `pdf-lib`), embedding the
+institution's logo (`Tenant.logoUrl`, if set — falls back gracefully to
+just the tenant name if not), student name, scholarship name, award
+type/amount, reason, start date, and duration.
+
+**Not done:** linking a `Tenant.logoUrl` upload UI — the certificate reads
+that field but nothing in the app lets an admin set it yet, so certificates
+will show text-only until that's built. Also, awarding through the
+*formal* application/review flow (officer marks status "Awarded") still
+doesn't create an `Award` record or certificate — only the direct-grant
+path does right now. Worth unifying those two paths later.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities
