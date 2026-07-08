@@ -14,6 +14,7 @@ type ProgramInfo = {
   name: string;
   description: string | null;
   tenantName: string;
+  institutionType: string;
   criteriaBlocks: CriteriaField[];
 };
 
@@ -30,6 +31,7 @@ export default function ApplyPage({ params }: { params: { programId: string } })
   const [contactPhone, setContactPhone] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [isZakatEligible, setIsZakatEligible] = useState(false);
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -88,7 +90,7 @@ export default function ApplyPage({ params }: { params: { programId: string } })
     const res = await fetch(`/api/apply/${params.programId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fullName, guardianName, contactEmail, contactPhone, answers, photoUrl }),
+      body: JSON.stringify({ fullName, guardianName, contactEmail, contactPhone, answers, photoUrl, isZakatEligible }),
     });
 
     setSubmitting(false);
@@ -236,6 +238,27 @@ export default function ApplyPage({ params }: { params: { programId: string } })
                   )}
                 </div>
               ))}
+            </>
+          )}
+
+          {(program.institutionType === "ISLAMIC" || program.institutionType === "WAQF") && (
+            <>
+              <hr className="border-plum/10" />
+              <label className="flex items-start gap-2 text-sm text-plum">
+                <input
+                  type="checkbox"
+                  className="mt-0.5"
+                  checked={isZakatEligible}
+                  onChange={(e) => setIsZakatEligible(e.target.checked)}
+                />
+                <span>
+                  I am a Muslim and eligible to receive Zakat
+                  <span className="block text-xs text-plum/50 mt-0.5">
+                    Only relevant if you&apos;re applying for Zakat-funded support. Leave unchecked
+                    if unsure or not applicable.
+                  </span>
+                </span>
+              </label>
             </>
           )}
 

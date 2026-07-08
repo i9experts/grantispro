@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/dashboard-layout";
 import StatCard from "@/components/stat-card";
 import { Wallet } from "lucide-react";
+import { formatCurrency, fundCategoryLabel } from "@/lib/currency";
 
 export default async function FundsPage() {
   const session = await getServerSession(authOptions);
@@ -35,7 +36,7 @@ export default async function FundsPage() {
           label="Sponsorship links"
           value={funds.reduce((sum, f) => sum + f._count.allocations, 0)}
         />
-        <StatCard label="Total balance" value={`$${totalBalance.toLocaleString()}`} tone="dark" />
+        <StatCard label="Total balance" value={formatCurrency(totalBalance, tenant?.defaultCurrency)} tone="dark" />
       </div>
 
       {funds.length === 0 ? (
@@ -63,7 +64,7 @@ export default async function FundsPage() {
                 <div>
                   <p className="font-medium text-plum">{f.name}</p>
                   <p className="text-sm text-plum/50 mt-0.5">
-                    {typeLabel[f.type]} &middot; {f._count.allocations} sponsorship link
+                    {typeLabel[f.type]} &middot; {fundCategoryLabel(f.category)} &middot; {f._count.allocations} sponsorship link
                     {f._count.allocations === 1 ? "" : "s"}
                   </p>
                 </div>

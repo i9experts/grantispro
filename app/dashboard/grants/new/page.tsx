@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/dashboard-layout";
 import { GraduationCap, Trophy, PieChart, Wallet as WalletIcon } from "lucide-react";
+import { FUND_CATEGORIES } from "@/lib/currency";
 
-type Applicant = { id: string; fullName: string; photoUrl: string | null };
-type Fund = { id: string; name: string; type: string; balance: number; currency: string };
+type Applicant = { id: string; fullName: string; photoUrl: string | null; isZakatEligible: boolean };
+type Fund = { id: string; name: string; type: string; category: string; balance: number; currency: string };
 
 const AWARD_TYPES = [
   { value: "FULL", label: "Full Scholarship", desc: "100% fee waiver — student pays nothing", icon: Trophy },
@@ -37,6 +38,7 @@ export default function GrantScholarshipPage() {
   const [creatingFund, setCreatingFund] = useState(false);
   const [newFundName, setNewFundName] = useState("");
   const [newFundType, setNewFundType] = useState("GENERAL");
+  const [newFundCategory, setNewFundCategory] = useState("GENERAL_DONATION");
   const [reason, setReason] = useState("Need-based");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [durationMonths, setDurationMonths] = useState<number | "">("");
@@ -105,7 +107,7 @@ export default function GrantScholarshipPage() {
       startDate: new Date(startDate).toISOString(),
       durationMonths: durationMonths === "" ? null : Number(durationMonths),
     };
-    if (creatingFund) body.newFund = { name: newFundName, type: newFundType };
+    if (creatingFund) body.newFund = { name: newFundName, type: newFundType, category: newFundCategory };
     else body.fundId = fundId;
 
     const res = await fetch("/api/awards", {
@@ -285,24 +287,51 @@ export default function GrantScholarshipPage() {
               </button>
             </div>
             {creatingFund && (
-              <div className="mt-2 flex gap-2">
-                <input
-                  placeholder="Fund name"
-                  className="flex-1 rounded-lg border border-plum/20 px-3 py-2 text-sm"
-                  value={newFundName}
-                  onChange={(e) => setNewFundName(e.target.value)}
-                />
+              <div className="mt-2 flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <input
+                    placeholder="Fund name"
+                    className="flex-1 rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                    value={newFundName}
+                    onChange={(e) => setNewFundName(e.target.value)}
+                  />
+                  <select
+                    className="rounded-lg border border-plum/20 px-2 text-sm"
+                    value={newFundType}
+                    onChange={(e) => setNewFundType(e.target.value)}
+                  >
+                    <option value="GENERAL">General</option>
+                    <option value="RESTRICTED">Restricted</option>
+                    <option value="DONOR_DIRECTED">Donor-directed</option>
+                  </select>
+                </div>
                 <select
-                  className="rounded-lg border border-plum/20 px-2 text-sm"
-                  value={newFundType}
-                  onChange={(e) => setNewFundType(e.target.value)}
+                  className="rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  value={newFundCategory}
+                  onChange={(e) => setNewFundCategory(e.target.value)}
                 >
-                  <option value="GENERAL">General</option>
-                  <option value="RESTRICTED">Restricted</option>
-                  <option value="DONOR_DIRECTED">Donor-directed</option>
+                  {FUND_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.group}: {c.label}
+                    </option>
+                  ))}
                 </select>
               </div>
             )}
+            {(() => {
+              const selectedFund = funds.find((f) => f.id === fundId);
+              const fundCategory = creatingFund ? newFundCategory : selectedFund?.category;
+              const selectedApplicant = applicants.find((a) => a.id === applicantId);
+              if (fundCategory === "ZAKAT" && selectedApplicant && !selectedApplicant.isZakatEligible) {
+                return (
+                  <p className="text-xs text-marigold-dark mt-2 bg-marigold/10 rounded-lg px-3 py-2">
+                    This is a Zakat fund, but {selectedApplicant.fullName} isn&apos;t marked as
+                    Zakat-eligible. You can still proceed — this is just a heads-up, not a block.
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
 
           <div className="grid grid-cols-2 gap-3">

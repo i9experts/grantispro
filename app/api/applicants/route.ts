@@ -11,7 +11,7 @@ export async function GET() {
 
   const applicants = await prisma.applicant.findMany({
     where: { tenantId: session.user.tenantId },
-    select: { id: true, fullName: true, photoUrl: true },
+    select: { id: true, fullName: true, photoUrl: true, isZakatEligible: true },
     orderBy: { fullName: "asc" },
   });
 

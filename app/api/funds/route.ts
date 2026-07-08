@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession, canManagePrograms } from "@/lib/session-helpers";
+import { FUND_CATEGORY_VALUES } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
 const createFundSchema = z.object({
   name: z.string().min(2),
   type: z.enum(["GENERAL", "RESTRICTED", "DONOR_DIRECTED"]),
+  category: z.enum(FUND_CATEGORY_VALUES).optional().default("GENERAL_DONATION"),
   currency: z.string().default("USD"),
 });
 

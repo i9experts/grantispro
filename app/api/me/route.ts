@@ -14,5 +14,6 @@ export async function GET() {
     name: session.user.name,
     role: session.user.role,
     tenantName: tenant?.name,
+    defaultCurrency: tenant?.defaultCurrency ?? "USD",
   });
 }

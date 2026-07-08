@@ -37,6 +37,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
           contactEmail: a.applicant.contactEmail,
           contactPhone: a.applicant.contactPhone,
           photoUrl: a.applicant.photoUrl,
+          isZakatEligible: a.applicant.isZakatEligible,
           metadata: answers,
         },
       };

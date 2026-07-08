@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FUND_CATEGORIES } from "@/lib/currency";
 
 type Fund = { id: string; name: string; type: string; balance: string | number; currency: string };
 type Applicant = { id: string; fullName: string };
@@ -27,6 +28,8 @@ export default function SponsorWizardPage({ params }: { params: { id: string } }
   const [creatingFund, setCreatingFund] = useState(false);
   const [newFundName, setNewFundName] = useState("");
   const [newFundType, setNewFundType] = useState("GENERAL");
+  const [newFundCategory, setNewFundCategory] = useState("GENERAL_DONATION");
+  const [pledgeCategory, setPledgeCategory] = useState("GENERAL_DONATION");
 
   const [targetType, setTargetType] = useState("STUDENT");
   const [targetId, setTargetId] = useState("");
@@ -78,6 +81,7 @@ export default function SponsorWizardPage({ params }: { params: { id: string } }
     const body: any = {
       amount,
       currency,
+      category: pledgeCategory,
       targetType,
       targetId:
         targetType === "STUDENT"
@@ -87,7 +91,7 @@ export default function SponsorWizardPage({ params }: { params: { id: string } }
           : undefined,
     };
     if (creatingFund) {
-      body.newFund = { name: newFundName, type: newFundType };
+      body.newFund = { name: newFundName, type: newFundType, category: newFundCategory };
     } else {
       body.fundId = fundId;
     }
@@ -149,6 +153,21 @@ export default function SponsorWizardPage({ params }: { params: { id: string } }
             </div>
 
             <div>
+              <label className="block text-sm font-medium text-plum">Donation category</label>
+              <select
+                className="mt-1 w-full rounded-lg border border-plum/20 px-3 py-2"
+                value={pledgeCategory}
+                onChange={(e) => setPledgeCategory(e.target.value)}
+              >
+                {FUND_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.group}: {c.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-plum mb-2">Contribute to fund</label>
               <div className="flex flex-col gap-2">
                 {funds.map((f) => (
@@ -183,21 +202,34 @@ export default function SponsorWizardPage({ params }: { params: { id: string } }
                 </button>
               </div>
               {creatingFund && (
-                <div className="mt-2 flex gap-2">
-                  <input
-                    placeholder="Fund name"
-                    className="flex-1 rounded-lg border border-plum/20 px-3 py-2 text-sm"
-                    value={newFundName}
-                    onChange={(e) => setNewFundName(e.target.value)}
-                  />
+                <div className="mt-2 flex flex-col gap-2">
+                  <div className="flex gap-2">
+                    <input
+                      placeholder="Fund name"
+                      className="flex-1 rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                      value={newFundName}
+                      onChange={(e) => setNewFundName(e.target.value)}
+                    />
+                    <select
+                      className="rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                      value={newFundType}
+                      onChange={(e) => setNewFundType(e.target.value)}
+                    >
+                      <option value="GENERAL">General</option>
+                      <option value="RESTRICTED">Restricted</option>
+                      <option value="DONOR_DIRECTED">Donor-directed</option>
+                    </select>
+                  </div>
                   <select
                     className="rounded-lg border border-plum/20 px-3 py-2 text-sm"
-                    value={newFundType}
-                    onChange={(e) => setNewFundType(e.target.value)}
+                    value={newFundCategory}
+                    onChange={(e) => setNewFundCategory(e.target.value)}
                   >
-                    <option value="GENERAL">General</option>
-                    <option value="RESTRICTED">Restricted</option>
-                    <option value="DONOR_DIRECTED">Donor-directed</option>
+                    {FUND_CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.group}: {c.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               )}

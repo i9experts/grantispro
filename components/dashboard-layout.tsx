@@ -81,10 +81,16 @@ export default function DashboardLayout({
         })}
       </nav>
       <div className="px-3 pb-3">
-        <div className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/40">
+        <Link
+          href="/dashboard/settings"
+          onClick={() => setMobileOpen(false)}
+          className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition ${
+            pathname?.startsWith("/dashboard/settings") ? "bg-white/10 text-ivory" : "text-white/60 hover:text-white/90"
+          }`}
+        >
           <Settings size={17} strokeWidth={1.75} />
           Settings
-        </div>
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-white/60 hover:text-white/90 transition"

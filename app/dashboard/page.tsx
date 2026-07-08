@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/dashboard-layout";
 import StatCard from "@/components/stat-card";
 import Link from "next/link";
 import { Award, HandCoins } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -31,7 +32,7 @@ export default async function DashboardPage() {
         <StatCard label="Active programs" value={programCount} />
         <StatCard label="Total applications" value={applicationCount} />
         <StatCard label="Donors" value={donorCount} />
-        <StatCard label="Funds tracked" value={`$${fundsTracked.toLocaleString()}`} tone="dark" />
+        <StatCard label="Funds tracked" value={formatCurrency(fundsTracked, tenant?.defaultCurrency)} tone="dark" />
       </div>
 
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">

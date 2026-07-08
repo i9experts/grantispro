@@ -2,15 +2,18 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession, canManagePrograms } from "@/lib/session-helpers";
+import { FUND_CATEGORY_VALUES } from "@/lib/currency";
 
 const sponsorSchema = z.object({
   amount: z.number().positive(),
   currency: z.string().default("USD"),
+  category: z.enum(FUND_CATEGORY_VALUES).optional().default("GENERAL_DONATION"),
   fundId: z.string().optional(),
   newFund: z
     .object({
       name: z.string().min(2),
       type: z.enum(["GENERAL", "RESTRICTED", "DONOR_DIRECTED"]),
+      category: z.enum(FUND_CATEGORY_VALUES).optional().default("GENERAL_DONATION"),
     })
     .optional(),
   targetType: z.enum(["STUDENT", "CLASS", "INSTITUTE", "PROJECT", "FUND"]),
@@ -35,7 +38,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const { amount, currency, fundId, newFund, targetType, targetId } = parsed.data;
+  const { amount, currency, category, fundId, newFund, targetType, targetId } = parsed.data;
 
   if (!fundId && !newFund) {
     return NextResponse.json({ error: { fundId: ["Choose an existing fund or create a new one"] } }, { status: 400 });
@@ -45,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     let fund;
     if (newFund) {
       fund = await tx.fund.create({
-        data: { tenantId: session.user.tenantId, name: newFund.name, type: newFund.type, currency },
+        data: { tenantId: session.user.tenantId, name: newFund.name, type: newFund.type, category: newFund.category, currency },
       });
     } else {
       fund = await tx.fund.findFirst({ where: { id: fundId, tenantId: session.user.tenantId } });
@@ -53,7 +56,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     const pledge = await tx.pledge.create({
-      data: { donorId: donor.id, amount, currency },
+      data: { donorId: donor.id, amount, currency, category },
     });
 
     const link = await tx.sponsorshipLink.create({

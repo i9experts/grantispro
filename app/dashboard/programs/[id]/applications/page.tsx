@@ -12,6 +12,7 @@ type Application = {
     contactEmail: string | null;
     contactPhone: string | null;
     photoUrl: string | null;
+    isZakatEligible: boolean;
     metadata: Record<string, string> | null;
   };
 };
@@ -102,7 +103,14 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
                       <div className="w-10 h-10 rounded-full bg-plum/5 shrink-0" />
                     )}
                     <div>
-                      <p className="font-medium text-plum">{a.applicant.fullName}</p>
+                      <p className="font-medium text-plum flex items-center gap-1.5">
+                        {a.applicant.fullName}
+                        {a.applicant.isZakatEligible && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald/10 text-emerald-dark font-normal">
+                            Zakat-eligible
+                          </span>
+                        )}
+                      </p>
                       <p className="text-sm text-plum/60 mt-0.5">
                         {a.applicant.contactEmail} &middot; Score: {a.eligibilityScore ?? 0}
                       </p>

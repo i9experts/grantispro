@@ -40,6 +40,7 @@ model Tenant {
   institutionType  InstitutionType
   logoUrl          String?
   primaryColor     String?
+  defaultCurrency  String          @default("USD")
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -151,6 +152,7 @@ model Applicant {
   contactEmail String?
   contactPhone String?
   photoUrl    String?  // uploaded via Cloudinary
+  isZakatEligible Boolean @default(false) // relevant only for Islamic/Waqf institutions; ignored elsewhere
   metadata    Json?    // flexible bag for custom criteria fields (income, category, etc.)
   createdAt   DateTime @default(now())
 
@@ -220,15 +222,29 @@ enum SponsorshipTargetType {
   FUND
 }
 
+enum FundCategory {
+  ZAKAT              // obligatory, Muslims only, must reach zakat-eligible recipients
+  SADAQAH            // voluntary charity, anyone
+  SADAQAH_JARIYAH    // ongoing/perpetual charity (e.g. a fund that keeps giving)
+  FITRANA            // Zakat al-Fitr, given before Eid al-Fitr
+  WAQF               // Islamic endowment — principal preserved, only proceeds used
+  QURBANI            // Eid al-Adha sacrifice-linked charity
+  GENERAL_DONATION   // secular/general giving, no religious designation
+  CORPORATE_CSR
+  GOVERNMENT_GRANT
+  OTHER
+}
+
 model Fund {
-  id          String    @id @default(cuid())
+  id          String       @id @default(cuid())
   tenantId    String
-  tenant      Tenant    @relation(fields: [tenantId], references: [id])
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
   name        String
   type        FundType
-  balance     Decimal   @default(0) @db.Decimal(14, 2)
-  currency    String    @default("USD")
-  createdAt   DateTime  @default(now())
+  category    FundCategory @default(GENERAL_DONATION)
+  balance     Decimal      @default(0) @db.Decimal(14, 2)
+  currency    String       @default("USD")
+  createdAt   DateTime     @default(now())
 
   programs      ScholarshipProgram[] @relation("ProgramFunds")
   allocations   SponsorshipLink[]
@@ -251,12 +267,13 @@ model Donor {
 }
 
 model Pledge {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   donorId     String
-  donor       Donor    @relation(fields: [donorId], references: [id])
-  amount      Decimal  @db.Decimal(14, 2)
-  currency    String   @default("USD")
-  committedAt DateTime @default(now())
+  donor       Donor        @relation(fields: [donorId], references: [id])
+  amount      Decimal      @db.Decimal(14, 2)
+  currency    String       @default("USD")
+  category    FundCategory @default(GENERAL_DONATION)
+  committedAt DateTime     @default(now())
   receivedAt  DateTime?
 }
 

@@ -10,6 +10,7 @@ const MAX_BYTES = 5 * 1024 * 1024;
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
   const file = formData.get("file");
+  const folder = formData.get("folder");
 
   if (!file || !(file instanceof File)) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
@@ -23,13 +24,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Image must be under 5MB" }, { status: 400 });
   }
 
+  const allowedFolders = ["grantispro/applicant-photos", "grantispro/institution-logos"];
+  const targetFolder =
+    typeof folder === "string" && allowedFolders.includes(folder) ? folder : "grantispro/applicant-photos";
+
   const arrayBuffer = await file.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
   const dataUri = `data:${file.type};base64,${base64}`;
 
   try {
     const result = await cloudinary.uploader.upload(dataUri, {
-      folder: "grantispro/applicant-photos",
+      folder: targetFolder,
       resource_type: "image",
       transformation: [{ width: 600, height: 600, crop: "limit" }],
     });

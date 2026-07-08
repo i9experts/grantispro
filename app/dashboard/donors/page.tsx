@@ -6,6 +6,7 @@ import Link from "next/link";
 import DashboardLayout from "@/components/dashboard-layout";
 import StatCard from "@/components/stat-card";
 import { Plus, User, Building2, Landmark, Globe } from "lucide-react";
+import { formatCurrency } from "@/lib/currency";
 
 const TYPE_ICON: Record<string, any> = {
   INDIVIDUAL: User,
@@ -50,7 +51,7 @@ export default async function DonorsPage() {
         <StatCard label="Total donors" value={totalDonors} />
         <StatCard label="Active sponsorships" value={activeSponsorships} />
         <StatCard label="Students sponsored" value={studentsSponsored} />
-        <StatCard label="Total pledged" value={`$${totalPledged.toLocaleString()}`} tone="dark" />
+        <StatCard label="Total pledged" value={formatCurrency(totalPledged, tenant?.defaultCurrency)} tone="dark" />
       </div>
 
       <div className="flex justify-end mb-4">
@@ -89,7 +90,7 @@ export default async function DonorsPage() {
                     </div>
                   </div>
                   <p className="text-lg font-display font-semibold text-plum">
-                    ${totalPledgedByDonor.toLocaleString()}
+                    {formatCurrency(totalPledgedByDonor, tenant?.defaultCurrency)}
                   </p>
                 </div>
                 {d.sponsorshipLinks.length > 0 && (

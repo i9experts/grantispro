@@ -12,7 +12,7 @@ export async function GET(req: NextRequest, { params }: { params: { programId: s
     where: { id: params.programId },
     include: {
       criteriaBlocks: { orderBy: { createdAt: "asc" } },
-      tenant: { select: { name: true } },
+      tenant: { select: { name: true, institutionType: true } },
     },
   });
 
@@ -26,6 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: { programId: s
       name: program.name,
       description: program.description,
       tenantName: program.tenant.name,
+      institutionType: program.tenant.institutionType,
       criteriaBlocks: program.criteriaBlocks.map((c) => ({
         id: c.id,
         label: c.label,
@@ -43,6 +44,7 @@ const submitSchema = z.object({
   contactPhone: z.string().optional(),
   answers: z.record(z.string(), z.string()),
   photoUrl: z.string().url().optional().or(z.literal("")),
+  isZakatEligible: z.boolean().optional().default(false),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { programId: string } }) {
@@ -61,7 +63,7 @@ export async function POST(req: NextRequest, { params }: { params: { programId: 
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const { fullName, guardianName, contactEmail, contactPhone, answers, photoUrl } = parsed.data;
+  const { fullName, guardianName, contactEmail, contactPhone, answers, photoUrl, isZakatEligible } = parsed.data;
 
   const evalResult = evaluateEligibility(
     program.logicType,
@@ -90,6 +92,7 @@ export async function POST(req: NextRequest, { params }: { params: { programId: 
         contactEmail,
         contactPhone,
         photoUrl: photoUrl || null,
+        isZakatEligible,
         metadata: answers,
       },
     });

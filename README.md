@@ -231,6 +231,46 @@ will show text-only until that's built. Also, awarding through the
 doesn't create an `Award` record or certificate — only the direct-grant
 path does right now. Worth unifying those two paths later.
 
+**Settings page + currency fix:** `/dashboard/settings` — institution
+admin can set a default currency (used for dashboard totals) and upload
+the institution logo (finally closes the gap from the certificate
+feature — logos now actually settable, stored via the same Cloudinary
+upload endpoint used for applicant photos, just a different folder).
+Root cause of the "always shows dollars" bug: several stat cards had
+`$` hardcoded as a literal string instead of reading `Tenant.defaultCurrency`
+— fixed everywhere across dashboard/donors/funds pages via a shared
+`lib/currency.ts` formatter. Individual funds/pledges/awards can still use
+their own currency independent of the tenant default.
+
+**Zakat eligibility:** `Applicant.isZakatEligible` — a checkbox on the
+public application form, but **only shown when the institution type is
+Islamic or Waqf** (checked via `Tenant.institutionType`). Private,
+Semi-Govt, Govt-funded, Trust, and NGO institutions never see this field —
+matches the "no hardcoded rule across institution types" principle rather
+than forcing an Islam-specific field on every tenant. Shown as a badge in
+the officer review queue. When granting a scholarship from a Zakat-category
+fund to a student not marked Zakat-eligible, the Grant Scholarship form
+shows a soft warning — not a hard block, since Grantispro isn't positioned
+to enforce religious rulings, just to surface the mismatch.
+
+**Donation/fund categories — comprehensive, intentionally hardcoded (not
+admin-configurable) per your request:** `FundCategory` enum covers actual
+Islamic charity types (Zakat, Sadaqah, Sadaqah Jariyah, Fitrana, Waqf,
+Qurbani) plus general/secular categories (General donation, Corporate CSR,
+Government grant, Other) — not just "Zakat vs Other." Applied to both
+`Fund` (a fund's overall designation) and `Pledge` (a donor's individual
+contribution can be tagged independently, in case it differs from the
+fund's primary designation). Selectable wherever a fund or pledge is
+created — sponsor wizard, grant scholarship flow.
+
+**A design note worth being upfront about:** Zakat has real Islamic
+jurisprudence requirements around who's a valid recipient and how strictly
+Zakat money must be segregated from other funds. This implementation
+tracks the *label* and gives a soft nudge — it does not enforce religious
+compliance rules. If this becomes something scholars/donors are relying on
+for actual Zakat distribution correctness, that needs real fiqh review,
+not just a software flag.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities

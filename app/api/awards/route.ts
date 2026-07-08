@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSession, canManagePrograms } from "@/lib/session-helpers";
+import { FUND_CATEGORY_VALUES } from "@/lib/currency";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,11 @@ const createAwardSchema = z.object({
   currency: z.string().default("USD"),
   fundId: z.string().optional(),
   newFund: z
-    .object({ name: z.string().min(2), type: z.enum(["GENERAL", "RESTRICTED", "DONOR_DIRECTED"]) })
+    .object({
+      name: z.string().min(2),
+      type: z.enum(["GENERAL", "RESTRICTED", "DONOR_DIRECTED"]),
+      category: z.enum(FUND_CATEGORY_VALUES).optional().default("GENERAL_DONATION"),
+    })
     .optional(),
   reason: z.string().optional(),
   startDate: z.string(), // ISO date string
@@ -88,7 +93,7 @@ export async function POST(req: NextRequest) {
     let fund;
     if (newFund) {
       fund = await tx.fund.create({
-        data: { tenantId: session.user.tenantId, name: newFund.name, type: newFund.type, currency },
+        data: { tenantId: session.user.tenantId, name: newFund.name, type: newFund.type, category: newFund.category, currency },
       });
     } else {
       fund = await tx.fund.findFirst({ where: { id: fundId, tenantId: session.user.tenantId } });
