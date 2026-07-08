@@ -147,10 +147,26 @@ real feature (e.g. a consent flag on `Applicant`).
   switching to the purple/green shown in the HifzPro reference — the logo
   and brand sheet already invested in this palette.
 
-**Student photo upload — schema prepped, not wired up yet:**
-`Applicant.photoUrl` field added. Actual upload (Cloudflare R2 credentials,
-upload API route, wiring into the application form and donor portal
-display) is pending R2 credentials.
+**Student photo upload — built, using Cloudinary (not Cloudflare R2):**
+Switched from the originally-planned R2 to Cloudinary at your request, for
+consistency with your other applications. `POST /api/upload` accepts an
+image (5MB cap, image mimetypes only), uploads to Cloudinary, returns a
+URL stored on `Applicant.photoUrl`. Wired into: the public application
+form (optional photo field with live preview), the officer review queue
+(thumbnail per applicant), and the donor transparency portal (shown next
+to each sponsorship).
+
+**Worth flagging — a real privacy tension, not fully resolved:** the donor
+portal masks a sponsored student's name to "First L." but now shows their
+full photo. A photo arguably reveals more identity than a first name does.
+This was built as explicitly requested ("donors can witness everything"),
+but if this becomes a real product decision later, it's worth revisiting
+whether photo visibility should be consent-gated the same way full names
+currently aren't shown.
+
+**Requires `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+`CLOUDINARY_API_SECRET`** as Railway environment variables — see
+`.env.example`.
 
 **Known gap, called out on purpose:** document upload is not implemented.
 The application form tells applicants what documents will be needed but

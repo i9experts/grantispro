@@ -12,6 +12,7 @@ type Overview = {
     id: string;
     targetType: string;
     targetLabel: string;
+    targetPhotoUrl: string | null;
     fundName: string;
     fundBalance: number;
     fundCurrency: string;
@@ -85,14 +86,27 @@ export default function DonorPortalPage() {
         ) : (
           <div className="mt-4 flex flex-col gap-3">
             {data.sponsorships.map((s) => (
-              <div key={s.id} className="bg-white/60 border border-plum/10 rounded-xl p-5">
-                <p className="text-plum">
-                  {TARGET_VERB[s.targetType]} <span className="font-medium">{s.targetLabel}</span> through{" "}
-                  <span className="font-medium">{s.fundName}</span>.
-                </p>
-                <p className="text-sm text-plum/50 mt-2">
-                  Fund balance: {s.fundCurrency} {s.fundBalance.toLocaleString()}
-                </p>
+              <div key={s.id} className="bg-white/60 border border-plum/10 rounded-xl p-5 flex items-center gap-4">
+                {s.targetPhotoUrl ? (
+                  <img
+                    src={s.targetPhotoUrl}
+                    alt=""
+                    className="w-14 h-14 rounded-full object-cover border border-plum/10 shrink-0"
+                  />
+                ) : s.targetType === "STUDENT" ? (
+                  <div className="w-14 h-14 rounded-full bg-plum/5 flex items-center justify-center shrink-0 text-plum/30 text-xs">
+                    No photo
+                  </div>
+                ) : null}
+                <div>
+                  <p className="text-plum">
+                    {TARGET_VERB[s.targetType]} <span className="font-medium">{s.targetLabel}</span> through{" "}
+                    <span className="font-medium">{s.fundName}</span>.
+                  </p>
+                  <p className="text-sm text-plum/50 mt-2">
+                    Fund balance: {s.fundCurrency} {s.fundBalance.toLocaleString()}
+                  </p>
+                </div>
               </div>
             ))}
           </div>

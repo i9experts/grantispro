@@ -36,6 +36,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
           fullName: a.applicant.fullName,
           contactEmail: a.applicant.contactEmail,
           contactPhone: a.applicant.contactPhone,
+          photoUrl: a.applicant.photoUrl,
           metadata: answers,
         },
       };

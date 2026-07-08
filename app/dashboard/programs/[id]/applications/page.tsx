@@ -11,6 +11,7 @@ type Application = {
     fullName: string;
     contactEmail: string | null;
     contactPhone: string | null;
+    photoUrl: string | null;
     metadata: Record<string, string> | null;
   };
 };
@@ -89,12 +90,23 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
                 <div className="flex items-center justify-between">
                   <button
                     onClick={() => setExpanded(expanded === a.id ? null : a.id)}
-                    className="text-left flex-1"
+                    className="text-left flex-1 flex items-center gap-3"
                   >
-                    <p className="font-medium text-plum">{a.applicant.fullName}</p>
-                    <p className="text-sm text-plum/60 mt-0.5">
-                      {a.applicant.contactEmail} &middot; Score: {a.eligibilityScore ?? 0}
-                    </p>
+                    {a.applicant.photoUrl ? (
+                      <img
+                        src={a.applicant.photoUrl}
+                        alt=""
+                        className="w-10 h-10 rounded-full object-cover border border-plum/10 shrink-0"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-plum/5 shrink-0" />
+                    )}
+                    <div>
+                      <p className="font-medium text-plum">{a.applicant.fullName}</p>
+                      <p className="text-sm text-plum/60 mt-0.5">
+                        {a.applicant.contactEmail} &middot; Score: {a.eligibilityScore ?? 0}
+                      </p>
+                    </div>
                   </button>
                   <div className="flex items-center gap-3">
                     <span className={`text-xs px-2.5 py-1 rounded-full ${STATUS_STYLES[a.status]}`}>

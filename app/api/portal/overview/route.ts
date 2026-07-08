@@ -39,10 +39,11 @@ export async function GET() {
   const applicants = studentIds.length
     ? await prisma.applicant.findMany({
         where: { id: { in: studentIds } },
-        select: { id: true, fullName: true },
+        select: { id: true, fullName: true, photoUrl: true },
       })
     : [];
   const nameById = Object.fromEntries(applicants.map((a) => [a.id, safeStudentName(a.fullName)]));
+  const photoById = Object.fromEntries(applicants.map((a) => [a.id, a.photoUrl]));
 
   const totalPledged = donor.pledges.reduce((sum, p) => sum + Number(p.amount), 0);
 
@@ -70,6 +71,7 @@ export async function GET() {
           : l.targetType === "INSTITUTE"
           ? "The whole institution"
           : "General fund",
+      targetPhotoUrl: l.targetType === "STUDENT" && l.targetId ? photoById[l.targetId] ?? null : null,
       fundName: l.fund.name,
       fundBalance: Number(l.fund.balance),
       fundCurrency: l.fund.currency,

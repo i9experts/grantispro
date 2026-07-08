@@ -30,6 +30,34 @@ export default function ApplyPage({ params }: { params: { programId: string } })
   const [contactPhone, setContactPhone] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string[]>>({});
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [photoPreview, setPhotoPreview] = useState("");
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPhotoPreview(URL.createObjectURL(file));
+    setPhotoUploading(true);
+    setPhotoError("");
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    setPhotoUploading(false);
+
+    if (!res.ok) {
+      const data = await res.json();
+      setPhotoError(data.error ?? "Upload failed");
+      return;
+    }
+
+    const data = await res.json();
+    setPhotoUrl(data.url);
+  }
 
   useEffect(() => {
     fetch(`/api/apply/${params.programId}`)
@@ -60,7 +88,7 @@ export default function ApplyPage({ params }: { params: { programId: string } })
     const res = await fetch(`/api/apply/${params.programId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fullName, guardianName, contactEmail, contactPhone, answers }),
+      body: JSON.stringify({ fullName, guardianName, contactEmail, contactPhone, answers, photoUrl }),
     });
 
     setSubmitting(false);
@@ -158,6 +186,25 @@ export default function ApplyPage({ params }: { params: { programId: string } })
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-plum">Your photo (optional)</label>
+            <p className="text-xs text-plum/50 mb-2">
+              Sponsors like to see who they&apos;re supporting — a recent photo helps.
+            </p>
+            <div className="flex items-center gap-4">
+              {photoPreview && (
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="w-16 h-16 rounded-full object-cover border border-plum/20"
+                />
+              )}
+              <input type="file" accept="image/*" onChange={handlePhotoChange} className="text-sm" />
+            </div>
+            {photoUploading && <p className="text-xs text-plum/50 mt-1">Uploading…</p>}
+            {photoError && <p className="text-xs text-red-600 mt-1">{photoError}</p>}
+          </div>
+
           {program.criteriaBlocks.length > 0 && (
             <>
               <hr className="border-plum/10" />
@@ -212,10 +259,10 @@ export default function ApplyPage({ params }: { params: { programId: string } })
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || photoUploading}
             className="w-full bg-plum text-ivory rounded-lg py-2.5 font-medium hover:bg-plum-deep transition disabled:opacity-50"
           >
-            {submitting ? "Submitting…" : "Submit application"}
+            {submitting ? "Submitting…" : photoUploading ? "Uploading photo…" : "Submit application"}
           </button>
         </form>
       </div>

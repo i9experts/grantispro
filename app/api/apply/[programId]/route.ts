@@ -42,6 +42,7 @@ const submitSchema = z.object({
   contactEmail: z.string().email(),
   contactPhone: z.string().optional(),
   answers: z.record(z.string(), z.string()),
+  photoUrl: z.string().url().optional().or(z.literal("")),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { programId: string } }) {
@@ -60,7 +61,7 @@ export async function POST(req: NextRequest, { params }: { params: { programId: 
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const { fullName, guardianName, contactEmail, contactPhone, answers } = parsed.data;
+  const { fullName, guardianName, contactEmail, contactPhone, answers, photoUrl } = parsed.data;
 
   const evalResult = evaluateEligibility(
     program.logicType,
@@ -88,6 +89,7 @@ export async function POST(req: NextRequest, { params }: { params: { programId: 
         guardianName,
         contactEmail,
         contactPhone,
+        photoUrl: photoUrl || null,
         metadata: answers,
       },
     });
