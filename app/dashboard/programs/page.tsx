@@ -3,11 +3,14 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import DashboardLayout from "@/components/dashboard-layout";
+import { Plus, Award } from "lucide-react";
 
 export default async function ProgramsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
 
+  const tenant = await prisma.tenant.findUnique({ where: { id: session.user.tenantId } });
   const programs = await prisma.scholarshipProgram.findMany({
     where: { tenantId: session.user.tenantId },
     include: { _count: { select: { criteriaBlocks: true, applications: true } } },
@@ -21,75 +24,68 @@ export default async function ProgramsPage() {
   };
 
   return (
-    <main className="min-h-screen bg-ivory px-8 py-10">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-plum">
-          Grantis<span className="text-marigold-dark">pro</span>
-        </h1>
-        <Link href="/dashboard" className="text-sm text-plum/60 hover:text-plum">
-          Back to dashboard
+    <DashboardLayout tenantName={tenant?.name} userName={session.user.name ?? undefined} role={session.user.role}>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="font-display font-semibold text-xl text-plum">Scholarship programs</h1>
+        <Link
+          href="/dashboard/programs/new"
+          className="bg-plum text-ivory rounded-lg px-4 py-2 text-sm font-medium hover:bg-plum-deep transition flex items-center gap-1.5"
+        >
+          <Plus size={16} strokeWidth={2} />
+          New program
         </Link>
-      </header>
+      </div>
 
-      <section className="mt-10 max-w-3xl">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-plum">Scholarship programs</h2>
-          <Link
-            href="/dashboard/programs/new"
-            className="bg-plum text-ivory rounded-lg px-4 py-2 text-sm font-medium hover:bg-plum-deep transition"
-          >
-            New program
-          </Link>
-        </div>
-
-        {programs.length === 0 ? (
-          <div className="bg-white/60 border border-plum/10 rounded-2xl p-8 text-center">
-            <p className="text-plum/70">No scholarship programs yet.</p>
-            <p className="text-sm text-plum/50 mt-1">
-              Create one to start defining eligibility criteria for applicants.
-            </p>
+      {programs.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-card border border-plum/5 p-10 text-center">
+          <div className="w-12 h-12 rounded-xl bg-plum/5 flex items-center justify-center mx-auto mb-3">
+            <Award size={22} className="text-plum/40" strokeWidth={1.75} />
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {programs.map((p) => (
-              <div
-                key={p.id}
-                className="bg-white/60 border border-plum/10 rounded-xl p-5"
-              >
-                <div className="flex items-center justify-between">
+          <p className="text-plum/70">No scholarship programs yet.</p>
+          <p className="text-sm text-plum/40 mt-1">
+            Create one to start defining eligibility criteria for applicants.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {programs.map((p) => (
+            <div key={p.id} className="bg-white rounded-2xl shadow-card border border-plum/5 p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-1 self-stretch rounded-full ${p.isActive ? "bg-emerald" : "bg-plum/10"}`}
+                  />
                   <div>
                     <p className="font-medium text-plum">{p.name}</p>
-                    <p className="text-sm text-plum/60 mt-0.5">
+                    <p className="text-sm text-plum/50 mt-0.5">
                       {logicLabel[p.logicType]} &middot; {p._count.criteriaBlocks} criteria &middot;{" "}
                       {p._count.applications} applications
                     </p>
                   </div>
-                  <span
-                    className={`text-xs px-2.5 py-1 rounded-full ${
-                      p.isActive
-                        ? "bg-emerald/10 text-emerald-dark"
-                        : "bg-plum/10 text-plum/60"
-                    }`}
-                  >
-                    {p.isActive ? "Active" : "Inactive"}
-                  </span>
                 </div>
-                <div className="mt-3 flex gap-4 text-sm">
-                  <Link href={`/dashboard/programs/${p.id}/criteria`} className="text-plum/70 hover:text-plum">
-                    Edit criteria
-                  </Link>
-                  <Link href={`/dashboard/programs/${p.id}/applications`} className="text-plum/70 hover:text-plum">
-                    View applications
-                  </Link>
-                  <Link href={`/apply/${p.id}`} target="_blank" className="text-emerald-dark hover:underline">
-                    Public application link
-                  </Link>
-                </div>
+                <span
+                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                    p.isActive ? "bg-emerald/10 text-emerald-dark" : "bg-plum/5 text-plum/40"
+                  }`}
+                >
+                  {p.isActive ? "Active" : "Inactive"}
+                </span>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
+              <div className="mt-3 pl-4 flex gap-4 text-sm">
+                <Link href={`/dashboard/programs/${p.id}/criteria`} className="text-plum/60 hover:text-plum">
+                  Edit criteria
+                </Link>
+                <Link href={`/dashboard/programs/${p.id}/applications`} className="text-plum/60 hover:text-plum">
+                  View applications
+                </Link>
+                <Link href={`/apply/${p.id}`} target="_blank" className="text-emerald-dark hover:underline">
+                  Public application link
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </DashboardLayout>
   );
 }

@@ -130,6 +130,28 @@ is a conservative default, not a configurable setting yet — an
 institution that wants different behavior would need that added as a
 real feature (e.g. a consent flag on `Applicant`).
 
+**Visual redesign — in progress, not complete:**
+- Real design system started: `DashboardLayout` (dark plum sidebar + topbar,
+  matching the concept shown earlier), `StatCard` component, Unbounded font
+  now actually loaded (`lib/fonts.ts`, local files in `public/fonts`),
+  `lucide-react` icons added
+- **Redesigned so far:** `/dashboard`, `/dashboard/programs`,
+  `/dashboard/donors`, `/dashboard/funds` — the four main hub/list pages
+- **Not yet redesigned** (still on the old bare-Tailwind styling from
+  earlier milestones): login, onboarding, new program form, criteria
+  builder, applications review queue, new donor form, sponsor wizard,
+  donor portal, public application form. These are next in line — flagging
+  so "full redesign" isn't misread as finished when only the hub pages are
+  done.
+- Kept Grantispro's own brand palette (plum/emerald/marigold) rather than
+  switching to the purple/green shown in the HifzPro reference — the logo
+  and brand sheet already invested in this palette.
+
+**Student photo upload — schema prepped, not wired up yet:**
+`Applicant.photoUrl` field added. Actual upload (Cloudflare R2 credentials,
+upload API route, wiring into the application form and donor portal
+display) is pending R2 credentials.
+
 **Known gap, called out on purpose:** document upload is not implemented.
 The application form tells applicants what documents will be needed but
 doesn't accept file uploads yet — that needs Cloudflare R2 wired in first

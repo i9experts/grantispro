@@ -150,6 +150,7 @@ model Applicant {
   guardianName String?
   contactEmail String?
   contactPhone String?
+  photoUrl    String?  // set once Cloudflare R2 upload is wired in
   metadata    Json?    // flexible bag for custom criteria fields (income, category, etc.)
   createdAt   DateTime @default(now())
 

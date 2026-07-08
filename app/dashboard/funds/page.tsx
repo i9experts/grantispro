@@ -2,12 +2,15 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import Link from "next/link";
+import DashboardLayout from "@/components/dashboard-layout";
+import StatCard from "@/components/stat-card";
+import { Wallet } from "lucide-react";
 
 export default async function FundsPage() {
   const session = await getServerSession(authOptions);
   if (!session?.user) redirect("/login");
 
+  const tenant = await prisma.tenant.findUnique({ where: { id: session.user.tenantId } });
   const funds = await prisma.fund.findMany({
     where: { tenantId: session.user.tenantId },
     include: { _count: { select: { allocations: true } } },
@@ -20,52 +23,58 @@ export default async function FundsPage() {
     DONOR_DIRECTED: "Donor-directed",
   };
 
+  const totalBalance = funds.reduce((sum, f) => sum + Number(f.balance), 0);
+
   return (
-    <main className="min-h-screen bg-ivory px-8 py-10">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-plum">
-          Grantis<span className="text-marigold-dark">pro</span>
-        </h1>
-        <div className="flex gap-4 text-sm">
-          <Link href="/dashboard/donors" className="text-plum/60 hover:text-plum">
-            Donors
-          </Link>
-          <Link href="/dashboard" className="text-plum/60 hover:text-plum">
-            Back to dashboard
-          </Link>
-        </div>
-      </header>
+    <DashboardLayout tenantName={tenant?.name} userName={session.user.name ?? undefined} role={session.user.role}>
+      <h1 className="font-display font-semibold text-xl text-plum mb-6">Funds</h1>
 
-      <section className="mt-10 max-w-3xl">
-        <h2 className="text-lg font-semibold text-plum mb-6">Funds</h2>
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <StatCard label="Total funds" value={funds.length} />
+        <StatCard
+          label="Sponsorship links"
+          value={funds.reduce((sum, f) => sum + f._count.allocations, 0)}
+        />
+        <StatCard label="Total balance" value={`$${totalBalance.toLocaleString()}`} tone="dark" />
+      </div>
 
-        {funds.length === 0 ? (
-          <div className="bg-white/60 border border-plum/10 rounded-2xl p-8 text-center">
-            <p className="text-plum/70">No funds yet.</p>
-            <p className="text-sm text-plum/50 mt-1">
-              Funds are created automatically the first time you add a donor sponsorship,
-              or you can add one from the donor flow.
-            </p>
+      {funds.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-card border border-plum/5 p-10 text-center">
+          <div className="w-12 h-12 rounded-xl bg-plum/5 flex items-center justify-center mx-auto mb-3">
+            <Wallet size={22} className="text-plum/40" strokeWidth={1.75} />
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {funds.map((f) => (
-              <div key={f.id} className="bg-white/60 border border-plum/10 rounded-xl p-5 flex items-center justify-between">
+          <p className="text-plum/70">No funds yet.</p>
+          <p className="text-sm text-plum/40 mt-1">
+            Funds are created automatically the first time you add a donor sponsorship, or you
+            can add one from the donor flow.
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {funds.map((f) => (
+            <div
+              key={f.id}
+              className="bg-white rounded-2xl shadow-card border border-plum/5 p-5 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-full bg-emerald/10 flex items-center justify-center shrink-0">
+                  <Wallet size={17} className="text-emerald-dark" strokeWidth={1.75} />
+                </div>
                 <div>
                   <p className="font-medium text-plum">{f.name}</p>
-                  <p className="text-sm text-plum/60 mt-0.5">
+                  <p className="text-sm text-plum/50 mt-0.5">
                     {typeLabel[f.type]} &middot; {f._count.allocations} sponsorship link
                     {f._count.allocations === 1 ? "" : "s"}
                   </p>
                 </div>
-                <p className="text-lg font-medium text-plum">
-                  {f.currency} {Number(f.balance).toLocaleString()}
-                </p>
               </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
+              <p className="text-lg font-display font-semibold text-plum">
+                {f.currency} {Number(f.balance).toLocaleString()}
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
+    </DashboardLayout>
   );
 }
