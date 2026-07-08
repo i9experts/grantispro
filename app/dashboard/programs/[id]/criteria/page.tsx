@@ -53,6 +53,7 @@ export default function CriteriaBuilderPage({ params }: { params: { id: string }
   const router = useRouter();
   const [programName, setProgramName] = useState("");
   const [logicType, setLogicType] = useState("ALL");
+  const [scoreThreshold, setScoreThreshold] = useState(10);
   const [criteria, setCriteria] = useState<CriteriaRow[]>([]);
   const [presetGroups, setPresetGroups] = useState<Record<string, Preset[]>>({});
   const [showPresets, setShowPresets] = useState(false);
@@ -70,6 +71,7 @@ export default function CriteriaBuilderPage({ params }: { params: { id: string }
         const { program } = await programRes.json();
         setProgramName(program.name);
         setLogicType(program.logicType);
+        setScoreThreshold(program.scoreThreshold ?? 10);
         setCriteria(
           program.criteriaBlocks.map((c: any) => ({
             clientId: newClientId(),
@@ -147,6 +149,14 @@ export default function CriteriaBuilderPage({ params }: { params: { id: string }
 
   async function handleSave() {
     setSaving(true);
+    await fetch(`/api/programs/${params.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        logicType,
+        scoreThreshold: logicType === "SCORE" ? scoreThreshold : null,
+      }),
+    });
     const res = await fetch(`/api/programs/${params.id}/criteria`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -184,6 +194,40 @@ export default function CriteriaBuilderPage({ params }: { params: { id: string }
       <section className="mt-10 max-w-3xl">
         <h2 className="text-lg font-semibold text-plum">{programName}</h2>
         <p className="text-sm text-plum/60 mt-1">Step 2 of 2 &middot; Define eligibility criteria</p>
+
+        <div className="mt-6 bg-white/60 border border-plum/10 rounded-xl p-4">
+          <label className="block text-sm font-medium text-plum mb-2">Eligibility logic</label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { value: "ALL", title: "Match all", desc: "Applicant must meet every criterion" },
+              { value: "ANY", title: "Match any", desc: "Applicant must meet one criterion" },
+              { value: "SCORE", title: "Weighted score", desc: "Criteria add up to a threshold" },
+            ].map((opt) => (
+              <button
+                type="button"
+                key={opt.value}
+                onClick={() => setLogicType(opt.value)}
+                className={`text-left rounded-lg p-3 border-2 transition ${
+                  logicType === opt.value ? "border-plum" : "border-plum/10"
+                }`}
+              >
+                <p className="text-sm font-medium text-plum">{opt.title}</p>
+                <p className="text-xs text-plum/60 mt-0.5">{opt.desc}</p>
+              </button>
+            ))}
+          </div>
+          {logicType === "SCORE" && (
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-plum">Score threshold to qualify</label>
+              <input
+                type="number"
+                className="mt-1 w-32 rounded-lg border border-plum/20 px-3 py-2"
+                value={scoreThreshold}
+                onChange={(e) => setScoreThreshold(Number(e.target.value))}
+              />
+            </div>
+          )}
+        </div>
 
         <div className="flex gap-3 mt-6">
           <button

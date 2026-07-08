@@ -271,6 +271,39 @@ compliance rules. If this becomes something scholars/donors are relying on
 for actual Zakat distribution correctness, that needs real fiqh review,
 not just a software flag.
 
+**Editable eligibility logic, delete everywhere, program-first grants,
+reports/analytics, logo upload fix:**
+
+- **Logic type is now editable after publishing.** The criteria builder
+  page previously only showed logic type read-only; it's now the same
+  editable ALL/ANY/SCORE selector as program creation, saved via a new
+  `PATCH /api/programs/[id]`.
+- **Delete added everywhere edit existed:** programs, donors, funds,
+  grants. Each has real guardrails, not just a button: programs refuse
+  to delete if applications exist (protects applicant history — suggests
+  setting Inactive instead); funds refuse if sponsorships/grants reference
+  them; donor deletion cascades to their pledges/sponsorship links/portal
+  login but **does not retroactively adjust fund balances** (documented
+  limitation — it's a records cleanup, not a financial reversal); grants
+  delete cleanly since nothing else depends on them.
+- **Grant Scholarship is now program-first**, matching the actual
+  workflow: pick a program → see only applicants who are Shortlisted or
+  Awarded in that program → grant to one of them. The old "any student in
+  the tenant" flow still exists as an explicit second option ("Any student
+  directly") for administrative grants outside the formal pipeline.
+- **Reports and analytics** (`/dashboard/reports`): scholarships by type,
+  applications by status, donors by type, fund balances by category,
+  programs list with application counts, Zakat-eligible student count.
+  Plus a **downloadable PDF** version of the same report
+  (`GET /api/reports/pdf`), with the institution logo if set.
+  Honest caveat printed on the PDF itself: amounts in different currencies
+  are shown separately, not converted — this tool doesn't do FX.
+- **Logo upload bug fixed** — root cause was UX, not the upload itself:
+  errors were silently swallowed (no message shown on failure) and saving
+  required a separate manual click after upload, which likely looked like
+  "nothing happened." Now shows real error messages and auto-saves
+  immediately after a successful upload.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities

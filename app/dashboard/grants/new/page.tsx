@@ -6,7 +6,14 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { GraduationCap, Trophy, PieChart, Wallet as WalletIcon } from "lucide-react";
 import { FUND_CATEGORIES } from "@/lib/currency";
 
-type Applicant = { id: string; fullName: string; photoUrl: string | null; isZakatEligible: boolean };
+type Applicant = {
+  id: string;
+  fullName: string;
+  photoUrl: string | null;
+  isZakatEligible: boolean;
+  applicationStatus?: string;
+  eligibilityScore?: number | null;
+};
 type Fund = { id: string; name: string; type: string; category: string; balance: number; currency: string };
 
 const AWARD_TYPES = [
@@ -29,6 +36,11 @@ export default function GrantScholarshipPage() {
   const [addingStudent, setAddingStudent] = useState(false);
   const [newStudentName, setNewStudentName] = useState("");
 
+  const [mode, setMode] = useState<"program" | "direct">("program");
+  const [programs, setPrograms] = useState<{ id: string; name: string }[]>([]);
+  const [selectedProgramId, setSelectedProgramId] = useState("");
+  const [loadingApplicants, setLoadingApplicants] = useState(false);
+
   const [scholarshipName, setScholarshipName] = useState("");
   const [awardType, setAwardType] = useState("FULL");
   const [percentValue, setPercentValue] = useState(50);
@@ -48,10 +60,10 @@ export default function GrantScholarshipPage() {
 
   useEffect(() => {
     async function load() {
-      const [meRes, applicantsRes, fundsRes] = await Promise.all([
+      const [meRes, fundsRes, programsRes] = await Promise.all([
         fetch("/api/me"),
-        fetch("/api/applicants"),
         fetch("/api/funds"),
+        fetch("/api/programs"),
       ]);
       if (meRes.ok) {
         const me = await meRes.json();
@@ -59,21 +71,50 @@ export default function GrantScholarshipPage() {
         setUserName(me.name);
         setRole(me.role);
       }
-      if (applicantsRes.ok) {
-        const { applicants } = await applicantsRes.json();
-        setApplicants(applicants);
-        if (applicants.length > 0) setApplicantId(applicants[0].id);
-        else setAddingStudent(true);
-      }
       if (fundsRes.ok) {
         const { funds } = await fundsRes.json();
         setFunds(funds);
         if (funds.length > 0) setFundId(funds[0].id);
         else setCreatingFund(true);
       }
+      if (programsRes.ok) {
+        const { programs } = await programsRes.json();
+        setPrograms(programs);
+        if (programs.length > 0) setSelectedProgramId(programs[0].id);
+        else setMode("direct");
+      }
     }
     load();
   }, []);
+
+  useEffect(() => {
+    async function loadApplicants() {
+      setLoadingApplicants(true);
+      setApplicantId("");
+      setAddingStudent(false);
+
+      if (mode === "direct") {
+        const res = await fetch("/api/applicants");
+        if (res.ok) {
+          const { applicants } = await res.json();
+          setApplicants(applicants);
+          if (applicants.length > 0) setApplicantId(applicants[0].id);
+          else setAddingStudent(true);
+        }
+      } else if (selectedProgramId) {
+        const res = await fetch(`/api/programs/${selectedProgramId}/shortlisted`);
+        if (res.ok) {
+          const { applicants } = await res.json();
+          setApplicants(applicants);
+          if (applicants.length > 0) setApplicantId(applicants[0].id);
+        } else {
+          setApplicants([]);
+        }
+      }
+      setLoadingApplicants(false);
+    }
+    loadApplicants();
+  }, [mode, selectedProgramId]);
 
   async function handleAddStudent() {
     if (!newStudentName.trim()) return;
@@ -135,8 +176,77 @@ export default function GrantScholarshipPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 bg-white rounded-2xl shadow-card border border-plum/5 p-6 space-y-5">
           <div>
+            <label className="block text-sm font-medium text-plum mb-2">Grant against</label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMode("program")}
+                className={`text-center rounded-lg p-2.5 border-2 text-sm font-medium transition ${
+                  mode === "program" ? "border-plum text-plum" : "border-plum/10 text-plum/60"
+                }`}
+              >
+                A program's shortlisted applicants
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("direct")}
+                className={`text-center rounded-lg p-2.5 border-2 text-sm font-medium transition ${
+                  mode === "direct" ? "border-plum text-plum" : "border-plum/10 text-plum/60"
+                }`}
+              >
+                Any student directly
+              </button>
+            </div>
+          </div>
+
+          {mode === "program" && (
+            <div>
+              <label className="block text-sm font-medium text-plum mb-1">Program</label>
+              {programs.length === 0 ? (
+                <p className="text-sm text-plum/50">
+                  No programs yet — <a href="/dashboard/programs/new" className="text-emerald-dark underline">create one</a>,
+                  or switch to granting directly.
+                </p>
+              ) : (
+                <select
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2"
+                  value={selectedProgramId}
+                  onChange={(e) => setSelectedProgramId(e.target.value)}
+                >
+                  {programs.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+
+          <div>
             <label className="block text-sm font-medium text-plum mb-1">Student</label>
-            {addingStudent ? (
+            {mode === "program" ? (
+              loadingApplicants ? (
+                <p className="text-sm text-plum/50">Loading applicants…</p>
+              ) : applicants.length === 0 ? (
+                <p className="text-sm text-plum/50">
+                  No shortlisted or awarded applicants for this program yet — review applications
+                  first, or switch to granting directly.
+                </p>
+              ) : (
+                <select
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2"
+                  value={applicantId}
+                  onChange={(e) => setApplicantId(e.target.value)}
+                >
+                  {applicants.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.fullName} — {a.applicationStatus?.replace("_", " ").toLowerCase()}, score {a.eligibilityScore ?? 0}
+                    </option>
+                  ))}
+                </select>
+              )
+            ) : addingStudent ? (
               <div className="flex gap-2">
                 <input
                   className="flex-1 rounded-lg border border-plum/20 px-3 py-2"

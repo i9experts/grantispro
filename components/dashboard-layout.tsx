@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   GraduationCap,
+  BarChart3,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
   { href: "/dashboard/grants", label: "Grants", icon: GraduationCap },
   { href: "/dashboard/donors", label: "Donors", icon: HandCoins },
   { href: "/dashboard/funds", label: "Funds", icon: Wallet },
+  { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
 ];
 
 export default function DashboardLayout({

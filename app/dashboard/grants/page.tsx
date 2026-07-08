@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import DashboardLayout from "@/components/dashboard-layout";
-import { Plus, GraduationCap, Download } from "lucide-react";
+import { Plus, GraduationCap, Download, Trash2 } from "lucide-react";
 
 type Award = {
   id: string;
@@ -39,6 +39,12 @@ export default function GrantsPage() {
       }
     );
   }, []);
+
+  async function handleDelete(id: string, name: string) {
+    if (!window.confirm(`Delete the grant for ${name}? This can't be undone.`)) return;
+    const res = await fetch(`/api/awards/${id}`, { method: "DELETE" });
+    if (res.ok) setAwards((a) => a.filter((award) => award.id !== id));
+  }
 
   return (
     <DashboardLayout tenantName={me.tenantName} userName={me.name} role={me.role}>
@@ -80,13 +86,22 @@ export default function GrantsPage() {
                     {a.durationMonths ? `${a.durationMonths} months` : "Ongoing"}
                   </p>
                 </div>
-                <a
-                  href={`/api/awards/${a.id}/certificate`}
-                  className="flex items-center gap-1.5 text-sm text-emerald-dark hover:underline shrink-0"
-                >
-                  <Download size={15} strokeWidth={1.75} />
-                  Certificate
-                </a>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <a
+                    href={`/api/awards/${a.id}/certificate`}
+                    className="flex items-center gap-1.5 text-sm text-emerald-dark hover:underline"
+                  >
+                    <Download size={15} strokeWidth={1.75} />
+                    Certificate
+                  </a>
+                  <button
+                    onClick={() => handleDelete(a.id, a.studentName)}
+                    className="flex items-center gap-1.5 text-sm text-red-600/70 hover:text-red-600"
+                  >
+                    <Trash2 size={15} strokeWidth={1.75} />
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}

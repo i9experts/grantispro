@@ -13,6 +13,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [logoError, setLogoError] = useState("");
 
   useEffect(() => {
     Promise.all([fetch("/api/me").then((r) => r.json()), fetch("/api/tenant").then((r) => r.json())]).then(
@@ -30,16 +31,50 @@ export default function SettingsPage() {
     if (!file) return;
 
     setLogoUploading(true);
+    setLogoError("");
     const formData = new FormData();
     formData.append("file", file);
     formData.append("folder", "grantispro/institution-logos");
 
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    let uploadedUrl: string | null = null;
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setLogoError(data.error ?? "Upload failed for an unknown reason.");
+        setLogoUploading(false);
+        return;
+      }
+      uploadedUrl = data.url;
+      setLogoUrl(data.url);
+    } catch (err) {
+      setLogoError("Couldn't reach the upload service. Check your connection and try again.");
+      setLogoUploading(false);
+      return;
+    }
     setLogoUploading(false);
 
-    if (res.ok) {
-      const data = await res.json();
-      setLogoUrl(data.url);
+    // Auto-save immediately so upload + save isn't a confusing two-step
+    // process — this was the likely cause of "logo isn't uploading":
+    // it *was* uploading, just not persisting until a separate manual save.
+    if (uploadedUrl) {
+      setSaving(true);
+      const saveRes = await fetch("/api/tenant", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ logoUrl: uploadedUrl }),
+      });
+      setSaving(false);
+      if (saveRes.ok) {
+        setSaved(true);
+      } else {
+        const data = await saveRes.json();
+        setLogoError(
+          typeof data.error === "string"
+            ? data.error
+            : "Logo uploaded but couldn't be saved. Try clicking Save settings below."
+        );
+      }
     }
   }
 
@@ -104,6 +139,7 @@ export default function SettingsPage() {
               <input type="file" accept="image/*" onChange={handleLogoChange} className="text-sm" />
             </div>
             {logoUploading && <p className="text-xs text-plum/50 mt-1">Uploading…</p>}
+            {logoError && <p className="text-xs text-red-600 mt-1">{logoError}</p>}
           </div>
 
           <button

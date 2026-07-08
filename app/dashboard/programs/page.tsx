@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import DashboardLayout from "@/components/dashboard-layout";
+import DeleteButton from "@/components/delete-button";
 import { Plus, Award } from "lucide-react";
 
 export default async function ProgramsPage() {
@@ -71,16 +72,22 @@ export default async function ProgramsPage() {
                   {p.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
-              <div className="mt-3 pl-4 flex gap-4 text-sm">
-                <Link href={`/dashboard/programs/${p.id}/criteria`} className="text-plum/60 hover:text-plum">
-                  Edit criteria
-                </Link>
-                <Link href={`/dashboard/programs/${p.id}/applications`} className="text-plum/60 hover:text-plum">
-                  View applications
-                </Link>
-                <Link href={`/apply/${p.id}`} target="_blank" className="text-emerald-dark hover:underline">
-                  Public application link
-                </Link>
+              <div className="mt-3 pl-4 flex items-center justify-between">
+                <div className="flex gap-4 text-sm">
+                  <Link href={`/dashboard/programs/${p.id}/criteria`} className="text-plum/60 hover:text-plum">
+                    Edit criteria
+                  </Link>
+                  <Link href={`/dashboard/programs/${p.id}/applications`} className="text-plum/60 hover:text-plum">
+                    View applications
+                  </Link>
+                  <Link href={`/apply/${p.id}`} target="_blank" className="text-emerald-dark hover:underline">
+                    Public application link
+                  </Link>
+                </div>
+                <DeleteButton
+                  endpoint={`/api/programs/${p.id}`}
+                  confirmMessage={`Delete "${p.name}"? This can't be undone.`}
+                />
               </div>
             </div>
           ))}

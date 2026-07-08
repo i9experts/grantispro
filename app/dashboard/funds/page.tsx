@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import DashboardLayout from "@/components/dashboard-layout";
+import DeleteButton from "@/components/delete-button";
 import StatCard from "@/components/stat-card";
 import { Wallet } from "lucide-react";
 import { formatCurrency, fundCategoryLabel } from "@/lib/currency";
@@ -69,9 +70,15 @@ export default async function FundsPage() {
                   </p>
                 </div>
               </div>
-              <p className="text-lg font-display font-semibold text-plum">
-                {f.currency} {Number(f.balance).toLocaleString()}
-              </p>
+              <div className="text-right">
+                <p className="text-lg font-display font-semibold text-plum">
+                  {f.currency} {Number(f.balance).toLocaleString()}
+                </p>
+                <DeleteButton
+                  endpoint={`/api/funds/${f.id}`}
+                  confirmMessage={`Delete "${f.name}"? Only possible if nothing is linked to it yet.`}
+                />
+              </div>
             </div>
           ))}
         </div>

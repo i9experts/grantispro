@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import DashboardLayout from "@/components/dashboard-layout";
+import DeleteButton from "@/components/delete-button";
 import StatCard from "@/components/stat-card";
 import { Plus, User, Building2, Landmark, Globe } from "lucide-react";
 import { formatCurrency } from "@/lib/currency";
@@ -93,23 +94,31 @@ export default async function DonorsPage() {
                     {formatCurrency(totalPledgedByDonor, tenant?.defaultCurrency)}
                   </p>
                 </div>
-                {d.sponsorshipLinks.length > 0 && (
-                  <div className="mt-3 pl-[3.25rem] pt-3 border-t border-plum/5 flex flex-col gap-1">
-                    {d.sponsorshipLinks.map((link) => (
-                      <p key={link.id} className="text-sm text-plum/60">
-                        {link.targetType === "STUDENT" && "Sponsoring a student via "}
-                        {link.targetType === "CLASS" && "Sponsoring a class via "}
-                        {link.targetType === "INSTITUTE" && "Sponsoring the institute via "}
-                        {link.targetType === "PROJECT" && "Sponsoring a project via "}
-                        {link.targetType === "FUND" && "Contributing to "}
-                        <span className="text-plum">{link.fund.name}</span>
-                      </p>
-                    ))}
-                  </div>
-                )}
+                <div className="mt-3 pl-[3.25rem] flex items-center justify-between">
+                  {d.sponsorshipLinks.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {d.sponsorshipLinks.map((link) => (
+                        <p key={link.id} className="text-sm text-plum/60">
+                          {link.targetType === "STUDENT" && "Sponsoring a student via "}
+                          {link.targetType === "CLASS" && "Sponsoring a class via "}
+                          {link.targetType === "INSTITUTE" && "Sponsoring the institute via "}
+                          {link.targetType === "PROJECT" && "Sponsoring a project via "}
+                          {link.targetType === "FUND" && "Contributing to "}
+                          <span className="text-plum">{link.fund.name}</span>
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <span />
+                  )}
+                  <DeleteButton
+                    endpoint={`/api/donors/${d.id}`}
+                    confirmMessage={`Delete "${d.name}"? This removes their pledges and sponsorship records too.`}
+                  />
+                </div>
                 <Link
                   href={`/dashboard/donors/${d.id}/sponsor`}
-                  className="inline-block mt-3 pl-[3.25rem] text-sm text-emerald-dark hover:underline"
+                  className="inline-block mt-2 pl-[3.25rem] text-sm text-emerald-dark hover:underline"
                 >
                   Add another pledge
                 </Link>
