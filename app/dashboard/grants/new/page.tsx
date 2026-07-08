@@ -84,7 +84,7 @@ export default function GrantScholarshipPage() {
     });
     if (res.ok) {
       const data = await res.json();
-      setApplicants((a) => [...a, { id: data.id, fullName: data.fullName, photoUrl: null }]);
+      setApplicants((a) => [...a, { id: data.id, fullName: data.fullName, photoUrl: null, isZakatEligible: false }]);
       setApplicantId(data.id);
       setAddingStudent(false);
       setNewStudentName("");
