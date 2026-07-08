@@ -10,6 +10,10 @@ export default function SettingsPage() {
   const [defaultCurrency, setDefaultCurrency] = useState("USD");
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [logoUploading, setLogoUploading] = useState(false);
+  const [bankName, setBankName] = useState("");
+  const [bankAccountTitle, setBankAccountTitle] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [bankIban, setBankIban] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,6 +25,10 @@ export default function SettingsPage() {
         setMe(meData);
         setDefaultCurrency(tenantData.tenant?.defaultCurrency ?? "USD");
         setLogoUrl(tenantData.tenant?.logoUrl ?? null);
+        setBankName(tenantData.tenant?.bankName ?? "");
+        setBankAccountTitle(tenantData.tenant?.bankAccountTitle ?? "");
+        setBankAccountNumber(tenantData.tenant?.bankAccountNumber ?? "");
+        setBankIban(tenantData.tenant?.bankIban ?? "");
         setLoading(false);
       }
     );
@@ -84,7 +92,7 @@ export default function SettingsPage() {
     const res = await fetch("/api/tenant", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ defaultCurrency, logoUrl }),
+      body: JSON.stringify({ defaultCurrency, logoUrl, bankName, bankAccountTitle, bankAccountNumber, bankIban }),
     });
     setSaving(false);
     if (res.ok) setSaved(true);
@@ -140,6 +148,48 @@ export default function SettingsPage() {
             </div>
             {logoUploading && <p className="text-xs text-plum/50 mt-1">Uploading…</p>}
             {logoError && <p className="text-xs text-red-600 mt-1">{logoError}</p>}
+          </div>
+
+          <div className="border-t border-plum/10 pt-6">
+            <label className="block text-sm font-medium text-plum mb-1">Bank details</label>
+            <p className="text-xs text-plum/50 mb-3">
+              Shown to prospective donors on your program invitation pages when they choose "Bank
+              Deposit" as their payment method.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-plum/60 mb-1">Bank name</label>
+                <input
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-plum/60 mb-1">Account title</label>
+                <input
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  value={bankAccountTitle}
+                  onChange={(e) => setBankAccountTitle(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-plum/60 mb-1">Account number</label>
+                <input
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  value={bankAccountNumber}
+                  onChange={(e) => setBankAccountNumber(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-plum/60 mb-1">IBAN (optional)</label>
+                <input
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  value={bankIban}
+                  onChange={(e) => setBankIban(e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
           <button

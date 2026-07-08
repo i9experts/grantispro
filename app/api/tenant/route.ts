@@ -18,6 +18,10 @@ export async function GET() {
       institutionType: tenant.institutionType,
       defaultCurrency: tenant.defaultCurrency,
       logoUrl: tenant.logoUrl,
+      bankName: tenant.bankName,
+      bankAccountTitle: tenant.bankAccountTitle,
+      bankAccountNumber: tenant.bankAccountNumber,
+      bankIban: tenant.bankIban,
     },
   });
 }
@@ -25,6 +29,10 @@ export async function GET() {
 const updateSchema = z.object({
   defaultCurrency: z.string().min(3).max(3).optional(),
   logoUrl: z.string().url().optional().nullable(),
+  bankName: z.string().optional().nullable(),
+  bankAccountTitle: z.string().optional().nullable(),
+  bankAccountNumber: z.string().optional().nullable(),
+  bankIban: z.string().optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest) {

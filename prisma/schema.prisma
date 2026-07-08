@@ -41,6 +41,10 @@ model Tenant {
   logoUrl          String?
   primaryColor     String?
   defaultCurrency  String          @default("USD")
+  bankName         String?
+  bankAccountTitle String?
+  bankAccountNumber String?
+  bankIban         String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
@@ -98,6 +102,7 @@ model ScholarshipProgram {
   criteriaBlocks CriteriaBlock[]
   applications   Application[]
   funds          Fund[]        @relation("ProgramFunds")
+  pledges        Pledge[]
 }
 
 // A single reusable, admin-defined eligibility rule (no hardcoded logic)
@@ -266,14 +271,40 @@ model Donor {
   users           User[]
 }
 
+enum PledgeFrequency {
+  ONE_TIME
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum PledgeMethod {
+  CASH
+  BANK_DEPOSIT
+  CHEQUE
+  BANK_TRANSFER
+  ONLINE
+}
+
+enum PledgeDelivery {
+  DONOR_SENDS      // donor will send/transfer funds themselves
+  SCHOOL_COLLECTS  // institution arranges collection from the donor
+}
+
 model Pledge {
-  id          String       @id @default(cuid())
+  id          String         @id @default(cuid())
   donorId     String
-  donor       Donor        @relation(fields: [donorId], references: [id])
-  amount      Decimal      @db.Decimal(14, 2)
-  currency    String       @default("USD")
-  category    FundCategory @default(GENERAL_DONATION)
-  committedAt DateTime     @default(now())
+  donor       Donor          @relation(fields: [donorId], references: [id])
+  programId   String?        // set when pledged via a program's public invite link
+  program     ScholarshipProgram? @relation(fields: [programId], references: [id])
+  amount      Decimal        @db.Decimal(14, 2)
+  currency    String         @default("USD")
+  category    FundCategory   @default(GENERAL_DONATION)
+  frequency   PledgeFrequency @default(ONE_TIME)
+  paymentMethod PledgeMethod @default(CASH)
+  deliveryPreference PledgeDelivery @default(DONOR_SENDS)
+  donorNote   String?        // e.g. collection address, special instructions
+  committedAt DateTime       @default(now())
   receivedAt  DateTime?
 }
 

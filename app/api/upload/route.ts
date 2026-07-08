@@ -8,6 +8,18 @@ import cloudinary from "@/lib/cloudinary";
 const MAX_BYTES = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    console.error("Cloudinary env vars missing", {
+      hasCloudName: !!process.env.CLOUDINARY_CLOUD_NAME,
+      hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+      hasApiSecret: !!process.env.CLOUDINARY_API_SECRET,
+    });
+    return NextResponse.json(
+      { error: "Image storage isn't configured on the server (missing Cloudinary credentials)." },
+      { status: 500 }
+    );
+  }
+
   const formData = await req.formData();
   const file = formData.get("file");
   const folder = formData.get("folder");
@@ -39,8 +51,11 @@ export async function POST(req: NextRequest) {
       transformation: [{ width: 600, height: 600, crop: "limit" }],
     });
     return NextResponse.json({ url: result.secure_url });
-  } catch (err) {
-    console.error("Cloudinary upload failed", err);
-    return NextResponse.json({ error: "Upload failed. Please try again." }, { status: 500 });
+  } catch (err: any) {
+    // Surface the real reason instead of a generic message — this is the
+    // only way to actually diagnose "upload isn't working" reports.
+    console.error("Cloudinary upload failed:", err?.message ?? err);
+    const detail = err?.error?.message || err?.message || "Unknown error";
+    return NextResponse.json({ error: `Upload failed: ${detail}` }, { status: 500 });
   }
 }

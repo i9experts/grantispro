@@ -83,6 +83,9 @@ export default async function ProgramsPage() {
                   <Link href={`/apply/${p.id}`} target="_blank" className="text-emerald-dark hover:underline">
                     Public application link
                   </Link>
+                  <Link href={`/invite/${p.id}`} target="_blank" className="text-marigold-dark hover:underline">
+                    Invite donors
+                  </Link>
                 </div>
                 <DeleteButton
                   endpoint={`/api/programs/${p.id}`}

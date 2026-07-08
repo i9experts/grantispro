@@ -304,6 +304,59 @@ reports/analytics, logo upload fix:**
   "nothing happened." Now shows real error messages and auto-saves
   immediately after a successful upload.
 
+**Two bugs fixed with real root-cause diagnosis, not guesses:**
+- **Logo upload:** the upload endpoint now explicitly checks Cloudinary
+  env vars are present and returns a clear error if not, and surfaces
+  Cloudinary's actual error message on failure instead of a generic
+  "upload failed." If it's still broken after this deploy, the error
+  shown will finally say why.
+- **PDF report:** the real bug — `/api/reports/pdf` was calling
+  `/api/reports/summary` via an internal HTTP self-fetch with manually
+  forwarded cookies, which is a fragile pattern on platforms like Railway
+  (loopback/cookie issues). Refactored so both routes call a shared
+  `lib/report-summary.ts` function directly, in-process. No network hop,
+  no cookie-forwarding fragility. Also added real error messages instead
+  of silent failure.
+
+**Donor invitation pages — the big one.** `/invite/[programId]`, linked
+from each program in the programs list ("Invite donors"). This is a
+polished, public, shareable page distinct from the internal admin-driven
+sponsor flow:
+- Shows the program, institution branding, live transparency stats
+  (students supported, pledges so far, amount raised for this specific
+  program)
+- Plain-English criteria list, so prospective donors understand who
+  they're funding before committing
+- Full pledge intent form: donor details, amount + currency + donation
+  category (same Islamic/general categories as elsewhere), **frequency**
+  (one-time/monthly/quarterly/yearly), **payment method** (cash/bank
+  deposit/cheque/bank transfer/online), and **delivery preference** (donor
+  delivers themselves vs. institution arranges collection) — each
+  selection reveals the right contextual info (bank details for bank
+  deposit/transfer, a collection-address field when the institution should
+  collect, an honest "not set up yet" note for online payment since there's
+  no payment gateway integrated)
+- **Optional donor portal account creation right in the same form** —
+  closes the loop with the existing donor transparency portal built
+  earlier, so a first-time donor can start tracking their impact
+  immediately without a separate staff-driven signup step later
+- Confirmation screen tailored to what they chose (repeats bank details if
+  relevant, confirms portal account, sets expectations on next steps)
+
+Institution bank details are now settable in `/dashboard/settings` (bank
+name, account title, account number, IBAN) specifically to power the
+"Bank Deposit" contextual panel on invite pages.
+
+**Scope decisions made here, worth knowing:**
+- A public pledge submission creates a `Donor` (matched by email if one
+  already exists) and a `Pledge` tied to the program — it does **not**
+  automatically create a `Fund`/`SponsorshipLink` or touch any fund
+  balance. Staff still need to formalize it (via the existing sponsor
+  flow) once they've actually verified the money arrived. This keeps
+  unverified public submissions from silently inflating fund totals.
+- No payment gateway is integrated (Stripe/etc.) — "Online payment" is
+  honestly labeled as not yet available rather than faked.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities
