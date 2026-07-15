@@ -1,14 +1,20 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
+import fs from "fs";
+import path from "path";
 
-// Brand colors as PDF RGB (0-1 scale)
-const PLUM = rgb(0x3b / 255, 0x1f / 255, 0x3a / 255);
-const EMERALD = rgb(0x1f / 255, 0xaa / 255, 0x7c / 255);
-const MARIGOLD = rgb(0xd6 / 255, 0x87 / 255, 0x0c / 255);
-const IVORY = rgb(0xfb / 255, 0xf7 / 255, 0xf0 / 255);
+// Palette echoing the reference certificate: deep green-black text,
+// gold/marigold rule lines and border, warm ivory background.
+const INK = rgb(0x22 / 255, 0x33 / 255, 0x2b / 255);
+const GOLD = rgb(0xc8 / 255, 0xa0 / 255, 0x35 / 255);
+const GOLD_DEEP = rgb(0xa8 / 255, 0x82 / 255, 0x1c / 255);
+const MUTED = rgb(0x5a / 255, 0x5a / 255, 0x54 / 255);
+const IVORY = rgb(0xfd / 255, 0xfc / 255, 0xf7 / 255);
 
 export type CertificateData = {
   tenantName: string;
   tenantLogoBytes?: Uint8Array | null;
+  campusName?: string | null;
   studentName: string;
   scholarshipName: string;
   awardType: "FULL" | "PARTIAL_PERCENT" | "FIXED_AMOUNT";
@@ -18,47 +24,85 @@ export type CertificateData = {
   reason?: string | null;
   startDate: Date;
   durationMonths?: number | null;
+  isIslamicInstitution: boolean;
+  signatoryName?: string | null;
+  signatoryTitle?: string | null;
 };
 
-function awardDescription(d: CertificateData): string {
-  if (d.awardType === "FULL") return "a Full Scholarship (100% fee waiver)";
-  if (d.awardType === "PARTIAL_PERCENT") return `a ${d.percentValue}% Scholarship Discount`;
-  return `a Fixed Scholarship Award of ${d.currency} ${d.amount.toLocaleString()}`;
+function academicYearLabel(startDate: Date, durationMonths?: number | null): string {
+  const startYear = startDate.getFullYear();
+  const spanMonths = durationMonths ?? 12;
+  const endDate = new Date(startDate.getTime());
+  endDate.setMonth(endDate.getMonth() + spanMonths);
+  const endYear = endDate.getFullYear();
+  return startYear === endYear ? `${startYear}` : `${startYear}\u2013${endYear}`;
+}
+
+function grantDescription(d: CertificateData): string {
+  const yearLabel = academicYearLabel(d.startDate, d.durationMonths);
+  if (d.awardType === "FULL") {
+    return `Full Scholarship (100% Tuition Fee Waiver)\nfor the Academic Year ${yearLabel}`;
+  }
+  if (d.awardType === "PARTIAL_PERCENT") {
+    return `${d.percentValue}% Tuition Fee Waiver\nfor the Academic Year ${yearLabel}`;
+  }
+  return `${d.currency} ${d.amount.toLocaleString()} Fixed Scholarship Award\nfor the Academic Year ${yearLabel}`;
+}
+
+// Simple word-wrap for pdf-lib, which has no built-in text flow.
+function wrapText(text: string, font: any, size: number, maxWidth: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const trial = current ? `${current} ${word}` : word;
+    if (font.widthOfTextAtSize(trial, size) > maxWidth && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = trial;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
 }
 
 export async function generateCertificate(data: CertificateData): Promise<Uint8Array> {
   const pdfDoc = await PDFDocument.create();
+  pdfDoc.registerFontkit(fontkit);
   const page = pdfDoc.addPage([842, 595]); // A4 landscape
+  const { width, height } = page.getSize();
 
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const fontItalic = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
-  const { width, height } = page.getSize();
+  let scriptFont = fontBold;
+  try {
+    const scriptBytes = fs.readFileSync(path.join(process.cwd(), "lib/fonts/GreatVibes-Regular.ttf"));
+    scriptFont = await pdfDoc.embedFont(scriptBytes);
+  } catch {
+    // Falls back to bold Helvetica if the script font can't be read —
+    // still functional, just less elegant.
+  }
 
-  // Background
+  // Background + double gold border, echoing the reference's ornate frame
+  // (without attempting to replicate the hand-drawn corner flourishes,
+  // which aren't realistic to reproduce with primitive PDF drawing).
   page.drawRectangle({ x: 0, y: 0, width, height, color: IVORY });
-
-  // Decorative border
   page.drawRectangle({
-    x: 24,
-    y: 24,
-    width: width - 48,
-    height: height - 48,
-    borderColor: PLUM,
-    borderWidth: 1.5,
+    x: 22, y: 22, width: width - 44, height: height - 44,
+    borderColor: GOLD, borderWidth: 2,
   });
   page.drawRectangle({
-    x: 34,
-    y: 34,
-    width: width - 68,
-    height: height - 68,
-    borderColor: MARIGOLD,
-    borderWidth: 0.75,
+    x: 30, y: 30, width: width - 60, height: height - 60,
+    borderColor: GOLD, borderWidth: 0.75,
   });
 
-  let cursorY = height - 90;
+  let y = height - 62;
+  const centerX = width / 2;
 
-  // Logo (if provided)
+  // Logo
   if (data.tenantLogoBytes) {
     try {
       let logoImage;
@@ -67,152 +111,117 @@ export async function generateCertificate(data: CertificateData): Promise<Uint8A
       } catch {
         logoImage = await pdfDoc.embedJpg(data.tenantLogoBytes);
       }
-      const logoDims = logoImage.scale(60 / logoImage.height);
-      page.drawImage(logoImage, {
-        x: width / 2 - logoDims.width / 2,
-        y: cursorY - 60,
-        width: logoDims.width,
-        height: logoDims.height,
-      });
-      cursorY -= 80;
+      const dims = logoImage.scale(52 / logoImage.height);
+      page.drawImage(logoImage, { x: centerX - dims.width / 2, y: y - 52, width: dims.width, height: dims.height });
+      y -= 66;
     } catch {
-      // If the logo can't be embedded, just skip it rather than failing the whole certificate.
+      // Skip logo silently if it can't be embedded.
     }
   }
 
   // Institution name
-  const tenantNameSize = 16;
-  const tenantNameWidth = fontBold.widthOfTextAtSize(data.tenantName.toUpperCase(), tenantNameSize);
-  page.drawText(data.tenantName.toUpperCase(), {
-    x: width / 2 - tenantNameWidth / 2,
-    y: cursorY,
-    size: tenantNameSize,
-    font: fontBold,
-    color: PLUM,
-  });
-  cursorY -= 40;
+  const nameSize = 17;
+  const nameW = fontBold.widthOfTextAtSize(data.tenantName, nameSize);
+  page.drawText(data.tenantName, { x: centerX - nameW / 2, y, size: nameSize, font: fontBold, color: INK });
+  y -= 20;
 
-  // "Certificate of Scholarship"
-  const titleSize = 28;
-  const title = "Certificate of Scholarship";
-  const titleWidth = fontBold.widthOfTextAtSize(title, titleSize);
-  page.drawText(title, {
-    x: width / 2 - titleWidth / 2,
-    y: cursorY,
-    size: titleSize,
-    font: fontBold,
-    color: PLUM,
-  });
-  cursorY -= 20;
-
-  page.drawLine({
-    start: { x: width / 2 - 60, y: cursorY },
-    end: { x: width / 2 + 60, y: cursorY },
-    thickness: 2,
-    color: MARIGOLD,
-  });
-  cursorY -= 50;
-
-  // Body text
-  const bodySize = 13;
-  const line1 = "This certifies that";
-  page.drawText(line1, {
-    x: width / 2 - fontRegular.widthOfTextAtSize(line1, bodySize) / 2,
-    y: cursorY,
-    size: bodySize,
-    font: fontRegular,
-    color: PLUM,
-  });
-  cursorY -= 36;
-
-  const nameSize = 26;
-  page.drawText(data.studentName, {
-    x: width / 2 - fontBold.widthOfTextAtSize(data.studentName, nameSize) / 2,
-    y: cursorY,
-    size: nameSize,
-    font: fontBold,
-    color: EMERALD,
-  });
-  cursorY -= 36;
-
-  const desc = awardDescription(data);
-  const line2 = `has been awarded ${desc},`;
-  page.drawText(line2, {
-    x: width / 2 - fontRegular.widthOfTextAtSize(line2, bodySize) / 2,
-    y: cursorY,
-    size: bodySize,
-    font: fontRegular,
-    color: PLUM,
-  });
-  cursorY -= 22;
-
-  const scholarshipLine = `"${data.scholarshipName}"`;
-  page.drawText(scholarshipLine, {
-    x: width / 2 - fontBold.widthOfTextAtSize(scholarshipLine, bodySize) / 2,
-    y: cursorY,
-    size: bodySize,
-    font: fontBold,
-    color: PLUM,
-  });
-  cursorY -= 22;
-
-  const durationText = data.durationMonths
-    ? `for a duration of ${data.durationMonths} month${data.durationMonths === 1 ? "" : "s"},`
-    : "on an ongoing basis,";
-  const startText = `starting ${data.startDate.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })}.`;
-  const line3 = `${durationText} ${startText}`;
-  page.drawText(line3, {
-    x: width / 2 - fontRegular.widthOfTextAtSize(line3, bodySize) / 2,
-    y: cursorY,
-    size: bodySize,
-    font: fontRegular,
-    color: PLUM,
-  });
-
-  if (data.reason) {
-    cursorY -= 22;
-    const reasonLine = `Basis: ${data.reason}`;
-    page.drawText(reasonLine, {
-      x: width / 2 - fontRegular.widthOfTextAtSize(reasonLine, 11) / 2,
-      y: cursorY,
-      size: 11,
-      font: fontRegular,
-      color: PLUM,
+  // Campus badge, if the student has one (mirrors the reference's "Fatima Campus" tag)
+  if (data.campusName) {
+    const campusSize = 10;
+    const campusW = fontRegular.widthOfTextAtSize(data.campusName, campusSize);
+    const pad = 10;
+    page.drawRectangle({
+      x: centerX - campusW / 2 - pad, y: y - 4, width: campusW + pad * 2, height: 16,
+      color: rgb(0xf3 / 255, 0xe9 / 255, 0xc4 / 255),
     });
+    page.drawText(data.campusName, { x: centerX - campusW / 2, y, size: campusSize, font: fontRegular, color: GOLD_DEEP });
+    y -= 26;
+  } else {
+    y -= 8;
   }
 
-  // Footer: issue date + signature line
-  const footerY = 90;
-  const issuedText = `Issued on ${new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })}`;
-  page.drawText(issuedText, {
-    x: 80,
-    y: footerY,
-    size: 10,
-    font: fontRegular,
-    color: PLUM,
+  // Student name
+  const studentSize = 26;
+  const studentW = fontBold.widthOfTextAtSize(data.studentName.toUpperCase(), studentSize);
+  page.drawText(data.studentName.toUpperCase(), {
+    x: centerX - studentW / 2, y, size: studentSize, font: fontBold, color: INK,
   });
+  y -= 22;
 
-  page.drawLine({
-    start: { x: width - 260, y: footerY + 24 },
-    end: { x: width - 80, y: footerY + 24 },
-    thickness: 0.75,
-    color: PLUM,
-  });
-  page.drawText("Authorized Signature", {
-    x: width - 260,
-    y: footerY + 8,
-    size: 10,
-    font: fontRegular,
-    color: PLUM,
-  });
+  // Reason subtitle
+  if (data.reason) {
+    const reasonSize = 12;
+    const reasonW = fontRegular.widthOfTextAtSize(data.reason, reasonSize);
+    page.drawText(data.reason, { x: centerX - reasonW / 2, y, size: reasonSize, font: fontRegular, color: MUTED });
+    y -= 26;
+  }
+
+  // "Certificate of Scholarship" in script
+  const scriptSize = 34;
+  const scriptText = "Certificate of Scholarship";
+  const scriptW = scriptFont.widthOfTextAtSize(scriptText, scriptSize);
+  page.drawText(scriptText, { x: centerX - scriptW / 2, y, size: scriptSize, font: scriptFont, color: GOLD_DEEP });
+  y -= 26;
+
+  const awardedToSize = 11;
+  const awardedToText = "This certificate is awarded to";
+  const awardedToW = fontItalic.widthOfTextAtSize(awardedToText, awardedToSize);
+  page.drawText(awardedToText, { x: centerX - awardedToW / 2, y, size: awardedToSize, font: fontItalic, color: MUTED });
+  y -= 20;
+
+  page.drawLine({ start: { x: centerX - 180, y }, end: { x: centerX + 180, y }, thickness: 0.75, color: GOLD });
+  y -= 26;
+
+  // Acknowledgment paragraph, word-wrapped
+  const ackText = `In acknowledgment of your commitment to education, ${data.tenantName} is honored to grant you the:`;
+  const ackSize = 11.5;
+  const ackLines = wrapText(ackText, fontRegular, ackSize, 520);
+  for (const line of ackLines) {
+    const lineW = fontRegular.widthOfTextAtSize(line, ackSize);
+    page.drawText(line, { x: centerX - lineW / 2, y, size: ackSize, font: fontRegular, color: INK });
+    y -= 16;
+  }
+  y -= 8;
+
+  // Grant detail (two lines: amount/type, academic year)
+  const grantLines = grantDescription(data).split("\n");
+  for (const line of grantLines) {
+    const size = 14;
+    const lw = fontBold.widthOfTextAtSize(line, size);
+    page.drawText(line, { x: centerX - lw / 2, y, size, font: fontBold, color: GOLD_DEEP });
+    y -= 18;
+  }
+  y -= 12;
+
+  // Closing message — Islamic blessing only for Islamic/Waqf institutions,
+  // a neutral closing otherwise. This mirrors the Zakat-eligibility pattern:
+  // religious content only appears where the institution type calls for it.
+  const closing = data.isIslamicInstitution
+    ? "May Allah ease your affairs, increase your barakah, and make you among those who benefit the Ummah."
+    : "We wish you continued success and every encouragement in your educational journey.";
+  const closingSize = 10.5;
+  const closingLines = wrapText(closing, fontItalic, closingSize, 480);
+  for (const line of closingLines) {
+    const lw = fontItalic.widthOfTextAtSize(line, closingSize);
+    page.drawText(line, { x: centerX - lw / 2, y, size: closingSize, font: fontItalic, color: MUTED });
+    y -= 15;
+  }
+
+  // Footer: award date (left-ish, centered block) + signature (right)
+  const footerY = 78;
+  const awardedOnLabel = `Awarded on: ${data.startDate.toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric",
+  })}`;
+  page.drawText(awardedOnLabel, { x: 80, y: footerY, size: 10.5, font: fontRegular, color: INK });
+
+  const sigX2 = width - 80;
+  const sigX1 = width - 260;
+  page.drawLine({ start: { x: sigX1, y: footerY + 26 }, end: { x: sigX2, y: footerY + 26 }, thickness: 0.75, color: INK });
+  const sigName = data.signatoryName || data.tenantName;
+  page.drawText(sigName, { x: sigX1, y: footerY + 12, size: 11, font: fontBold, color: INK });
+  if (data.signatoryTitle) {
+    page.drawText(data.signatoryTitle, { x: sigX1, y: footerY - 2, size: 9.5, font: fontRegular, color: MUTED });
+  }
 
   return pdfDoc.save();
 }

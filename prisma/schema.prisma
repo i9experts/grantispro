@@ -45,6 +45,8 @@ model Tenant {
   bankAccountTitle String?
   bankAccountNumber String?
   bankIban         String?
+  signatoryName    String?
+  signatoryTitle   String?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 

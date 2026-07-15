@@ -22,6 +22,8 @@ export async function GET() {
       bankAccountTitle: tenant.bankAccountTitle,
       bankAccountNumber: tenant.bankAccountNumber,
       bankIban: tenant.bankIban,
+      signatoryName: tenant.signatoryName,
+      signatoryTitle: tenant.signatoryTitle,
     },
   });
 }
@@ -33,6 +35,8 @@ const updateSchema = z.object({
   bankAccountTitle: z.string().optional().nullable(),
   bankAccountNumber: z.string().optional().nullable(),
   bankIban: z.string().optional().nullable(),
+  signatoryName: z.string().optional().nullable(),
+  signatoryTitle: z.string().optional().nullable(),
 });
 
 export async function PATCH(req: NextRequest) {

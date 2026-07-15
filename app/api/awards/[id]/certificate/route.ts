@@ -10,8 +10,8 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const award = await prisma.award.findFirst({
     where: { id: params.id, fund: { tenantId: session.user.tenantId } },
     include: {
-      applicant: true,
-      application: { include: { applicant: true } },
+      applicant: { include: { campus: true } },
+      application: { include: { applicant: { include: { campus: true } } } },
       fund: { include: { tenant: true } },
     },
   });
@@ -21,10 +21,12 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const student = award.applicant ?? award.application?.applicant;
   if (!student) return NextResponse.json({ error: "No student on this award" }, { status: 400 });
 
+  const tenant = award.fund.tenant;
+
   let logoBytes: Uint8Array | null = null;
-  if (award.fund.tenant.logoUrl) {
+  if (tenant.logoUrl) {
     try {
-      const res = await fetch(award.fund.tenant.logoUrl);
+      const res = await fetch(tenant.logoUrl);
       if (res.ok) logoBytes = new Uint8Array(await res.arrayBuffer());
     } catch {
       // Missing/unreachable logo shouldn't block certificate generation.
@@ -32,8 +34,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   }
 
   const pdfBytes = await generateCertificate({
-    tenantName: award.fund.tenant.name,
+    tenantName: tenant.name,
     tenantLogoBytes: logoBytes,
+    campusName: student.campus?.name ?? null,
     studentName: student.fullName,
     scholarshipName: award.scholarshipName,
     awardType: award.awardType,
@@ -43,6 +46,9 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
     reason: award.reason,
     startDate: award.startDate,
     durationMonths: award.durationMonths,
+    isIslamicInstitution: tenant.institutionType === "ISLAMIC" || tenant.institutionType === "WAQF",
+    signatoryName: tenant.signatoryName,
+    signatoryTitle: tenant.signatoryTitle,
   });
 
   return new NextResponse(Buffer.from(pdfBytes), {

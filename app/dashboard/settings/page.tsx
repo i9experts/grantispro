@@ -15,6 +15,8 @@ export default function SettingsPage() {
   const [bankAccountTitle, setBankAccountTitle] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankIban, setBankIban] = useState("");
+  const [signatoryName, setSignatoryName] = useState("");
+  const [signatoryTitle, setSignatoryTitle] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -30,6 +32,8 @@ export default function SettingsPage() {
         setBankAccountTitle(tenantData.tenant?.bankAccountTitle ?? "");
         setBankAccountNumber(tenantData.tenant?.bankAccountNumber ?? "");
         setBankIban(tenantData.tenant?.bankIban ?? "");
+        setSignatoryName(tenantData.tenant?.signatoryName ?? "");
+        setSignatoryTitle(tenantData.tenant?.signatoryTitle ?? "");
         setLoading(false);
       }
     );
@@ -93,7 +97,16 @@ export default function SettingsPage() {
     const res = await fetch("/api/tenant", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ defaultCurrency, logoUrl, bankName, bankAccountTitle, bankAccountNumber, bankIban }),
+      body: JSON.stringify({
+        defaultCurrency,
+        logoUrl,
+        bankName,
+        bankAccountTitle,
+        bankAccountNumber,
+        bankIban,
+        signatoryName,
+        signatoryTitle,
+      }),
     });
     setSaving(false);
     if (res.ok) setSaved(true);
@@ -188,6 +201,34 @@ export default function SettingsPage() {
                   className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
                   value={bankIban}
                   onChange={(e) => setBankIban(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-plum/10 pt-6">
+            <label className="block text-sm font-medium text-plum mb-1">Certificate signatory</label>
+            <p className="text-xs text-plum/50 mb-3">
+              Printed on scholarship certificates — usually your founder, principal, or director,
+              not necessarily whoever is logged in when a grant is made.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-plum/60 mb-1">Name</label>
+                <input
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  placeholder="e.g. Atiq ur Rehman Ayubi"
+                  value={signatoryName}
+                  onChange={(e) => setSignatoryName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-plum/60 mb-1">Title</label>
+                <input
+                  className="w-full rounded-lg border border-plum/20 px-3 py-2 text-sm"
+                  placeholder="e.g. Founder | Director"
+                  value={signatoryTitle}
+                  onChange={(e) => setSignatoryTitle(e.target.value)}
                 />
               </div>
             </div>

@@ -378,6 +378,27 @@ as a funding target) is still free text, not linked to the new
 separate rather than conflating "a donor's funding target" with "a
 student's own class assignment."
 
+**Certificate redesigned to match a real reference template** (a physical
+certificate the school already uses). Now includes: institution logo,
+campus badge if the student has one assigned, student name, reason
+subtitle, an actual script font ("Great Vibes") for the "Certificate of
+Scholarship" heading, the acknowledgment paragraph, the specific grant
+detail (Full/Partial %/Fixed, with a computed "Academic Year" label from
+the award's start date and duration), a closing message that's the
+Islamic blessing text **only for Islamic/Waqf institutions** (neutral
+closing otherwise — same conditional pattern as Zakat eligibility), award
+date, and a proper signature line. **Signatory name/title is now a Settings
+field** (`Tenant.signatoryName`/`signatoryTitle`) rather than whoever
+happens to be logged in when the grant is made — matches how the reference
+certificate has a fixed "Founder | Director" signature regardless of which
+staff member processes the paperwork.
+
+Honest limitation: the reference certificate's ornate corner flourishes
+aren't replicated — pdf-lib draws primitive shapes, not hand-drawn
+scrollwork, so the border is a clean double gold line instead. Everything
+else (logo, campus tag, script heading, wording, signature) matches
+closely.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities
