@@ -357,6 +357,27 @@ name, account title, account number, IBAN) specifically to power the
 - No payment gateway is integrated (Stripe/etc.) — "Online payment" is
   honestly labeled as not yet available rather than faked.
 
+**Campus and class filtering:** `Campus` and `SchoolClass` are new
+tenant-configurable lists (not hardcoded — naming varies too much between
+institutions: city-named campuses vs. Boys/Girls vs. numbered branches;
+Grade 1-12 vs. Hifz Year 1-5 vs. semester systems). Managed in
+`/dashboard/settings` (simple add/remove tag lists). Applicants can
+optionally be tagged with a campus and class — shown as dropdowns on the
+public application form only when the tenant has actually configured at
+least one of each (skipped entirely for single-campus schools that never
+set them up). The officer review queue now has campus/class filter
+dropdowns at the top, and shows the tags inline per applicant. Delete on
+a campus/class is blocked if any student is still assigned to it, same
+guardrail pattern as programs/funds.
+
+**Not wired up yet:** the "Add new student" flow inside Grant Scholarship
+doesn't have campus/class fields — only the public application form does.
+Also, `SponsorshipLink.targetType = CLASS` (a donor sponsoring "a class"
+as a funding target) is still free text, not linked to the new
+`SchoolClass` entity — those are conceptually related but I kept them
+separate rather than conflating "a donor's funding target" with "a
+student's own class assignment."
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities

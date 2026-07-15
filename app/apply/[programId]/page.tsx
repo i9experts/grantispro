@@ -16,6 +16,8 @@ type ProgramInfo = {
   tenantName: string;
   institutionType: string;
   criteriaBlocks: CriteriaField[];
+  campuses: { id: string; name: string }[];
+  classes: { id: string; name: string }[];
 };
 
 export default function ApplyPage({ params }: { params: { programId: string } }) {
@@ -32,6 +34,8 @@ export default function ApplyPage({ params }: { params: { programId: string } })
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   const [isZakatEligible, setIsZakatEligible] = useState(false);
+  const [campusId, setCampusId] = useState("");
+  const [classId, setClassId] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
   const [photoPreview, setPhotoPreview] = useState("");
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -90,7 +94,17 @@ export default function ApplyPage({ params }: { params: { programId: string } })
     const res = await fetch(`/api/apply/${params.programId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fullName, guardianName, contactEmail, contactPhone, answers, photoUrl, isZakatEligible }),
+      body: JSON.stringify({
+        fullName,
+        guardianName,
+        contactEmail,
+        contactPhone,
+        answers,
+        photoUrl,
+        isZakatEligible,
+        campusId,
+        classId,
+      }),
     });
 
     setSubmitting(false);
@@ -187,6 +201,45 @@ export default function ApplyPage({ params }: { params: { programId: string } })
               onChange={(e) => setContactPhone(e.target.value)}
             />
           </div>
+
+          {(program.campuses.length > 0 || program.classes.length > 0) && (
+            <div className="grid grid-cols-2 gap-3">
+              {program.campuses.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-plum">Campus</label>
+                  <select
+                    className="mt-1 w-full rounded-lg border border-plum/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald"
+                    value={campusId}
+                    onChange={(e) => setCampusId(e.target.value)}
+                  >
+                    <option value="">Select…</option>
+                    {program.campuses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {program.classes.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-plum">Class / grade</label>
+                  <select
+                    className="mt-1 w-full rounded-lg border border-plum/20 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald"
+                    value={classId}
+                    onChange={(e) => setClassId(e.target.value)}
+                  >
+                    <option value="">Select…</option>
+                    {program.classes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-plum">Your photo (optional)</label>

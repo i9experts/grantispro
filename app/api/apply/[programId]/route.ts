@@ -20,6 +20,11 @@ export async function GET(req: NextRequest, { params }: { params: { programId: s
     return NextResponse.json({ error: "This scholarship program isn't accepting applications." }, { status: 404 });
   }
 
+  const [campuses, classes] = await Promise.all([
+    prisma.campus.findMany({ where: { tenantId: program.tenantId }, orderBy: { name: "asc" } }),
+    prisma.schoolClass.findMany({ where: { tenantId: program.tenantId }, orderBy: { name: "asc" } }),
+  ]);
+
   return NextResponse.json({
     program: {
       id: program.id,
@@ -33,6 +38,8 @@ export async function GET(req: NextRequest, { params }: { params: { programId: s
         fieldType: c.fieldType,
         requiredDocumentLabel: c.requiredDocumentLabel,
       })),
+      campuses,
+      classes,
     },
   });
 }
@@ -45,6 +52,8 @@ const submitSchema = z.object({
   answers: z.record(z.string(), z.string()),
   photoUrl: z.string().url().optional().or(z.literal("")),
   isZakatEligible: z.boolean().optional().default(false),
+  campusId: z.string().optional().or(z.literal("")),
+  classId: z.string().optional().or(z.literal("")),
 });
 
 export async function POST(req: NextRequest, { params }: { params: { programId: string } }) {
@@ -63,7 +72,8 @@ export async function POST(req: NextRequest, { params }: { params: { programId: 
     return NextResponse.json({ error: parsed.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const { fullName, guardianName, contactEmail, contactPhone, answers, photoUrl, isZakatEligible } = parsed.data;
+  const { fullName, guardianName, contactEmail, contactPhone, answers, photoUrl, isZakatEligible, campusId, classId } =
+    parsed.data;
 
   const evalResult = evaluateEligibility(
     program.logicType,
@@ -93,6 +103,8 @@ export async function POST(req: NextRequest, { params }: { params: { programId: 
         contactPhone,
         photoUrl: photoUrl || null,
         isZakatEligible,
+        campusId: campusId || null,
+        classId: classId || null,
         metadata: answers,
       },
     });

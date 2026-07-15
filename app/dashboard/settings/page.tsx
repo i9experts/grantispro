@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
+import TagListManager from "@/components/tag-list-manager";
 import { CURRENCIES } from "@/lib/currency";
 import { Save } from "lucide-react";
 
@@ -201,6 +202,21 @@ export default function SettingsPage() {
             {saving ? "Saving…" : "Save settings"}
           </button>
           {saved && <p className="text-sm text-emerald-dark">Saved.</p>}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+          <TagListManager
+            title="Campuses"
+            description="For multi-campus institutions — lets you filter students by campus."
+            endpoint="/api/campuses"
+            itemsKey="campuses"
+          />
+          <TagListManager
+            title="Classes / grade levels"
+            description="Your own naming — Grade 1-12, Hifz Year 1-5, whatever fits your institution."
+            endpoint="/api/classes"
+            itemsKey="classes"
+          />
         </div>
       </div>
     </DashboardLayout>

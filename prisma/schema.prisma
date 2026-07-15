@@ -148,6 +148,30 @@ enum ApplicationStatus {
   RENEWED
 }
 
+// Tenant-configurable — a multi-campus institution defines its own list.
+// Not hardcoded, since campus naming varies wildly (city names, "Boys/Girls",
+// numbered branches, etc.)
+model Campus {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+
+  applicants Applicant[]
+}
+
+// Tenant-configurable — grade/class naming varies just as much (Grade 1-12,
+// Hifz Year 1-5, university semesters, etc.), so this is a per-tenant list
+// rather than a fixed enum.
+model SchoolClass {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  createdAt DateTime @default(now())
+
+  applicants Applicant[]
+}
+
 model Applicant {
   id          String   @id @default(cuid())
   tenantId    String
@@ -158,6 +182,10 @@ model Applicant {
   contactPhone String?
   photoUrl    String?  // uploaded via Cloudinary
   isZakatEligible Boolean @default(false) // relevant only for Islamic/Waqf institutions; ignored elsewhere
+  campusId    String?
+  campus      Campus?  @relation(fields: [campusId], references: [id])
+  classId     String?
+  schoolClass SchoolClass? @relation(fields: [classId], references: [id])
   metadata    Json?    // flexible bag for custom criteria fields (income, category, etc.)
   createdAt   DateTime @default(now())
 

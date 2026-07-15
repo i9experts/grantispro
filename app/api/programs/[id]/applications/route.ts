@@ -14,7 +14,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const applications = await prisma.application.findMany({
     where: { programId: program.id },
-    include: { applicant: true },
+    include: { applicant: { include: { campus: true, schoolClass: true } } },
     orderBy: [{ eligibilityScore: "desc" }, { submittedAt: "asc" }],
   });
 
@@ -38,6 +38,8 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
           contactPhone: a.applicant.contactPhone,
           photoUrl: a.applicant.photoUrl,
           isZakatEligible: a.applicant.isZakatEligible,
+          campusName: a.applicant.campus?.name ?? null,
+          className: a.applicant.schoolClass?.name ?? null,
           metadata: answers,
         },
       };

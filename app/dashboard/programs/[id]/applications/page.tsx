@@ -13,6 +13,8 @@ type Application = {
     contactPhone: string | null;
     photoUrl: string | null;
     isZakatEligible: boolean;
+    campusName: string | null;
+    className: string | null;
     metadata: Record<string, string> | null;
   };
 };
@@ -33,6 +35,10 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
   const [applications, setApplications] = useState<Application[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [campuses, setCampuses] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [campusFilter, setCampusFilter] = useState("");
+  const [classFilter, setClassFilter] = useState("");
 
   async function load() {
     const res = await fetch(`/api/programs/${params.id}/applications`);
@@ -46,6 +52,8 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
 
   useEffect(() => {
     load();
+    fetch("/api/campuses").then((r) => r.json()).then((d) => setCampuses(d.campuses ?? []));
+    fetch("/api/classes").then((r) => r.json()).then((d) => setClasses(d.classes ?? []));
   }, [params.id]);
 
   async function updateStatus(id: string, status: string) {
@@ -80,13 +88,54 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
           evaluation — final decisions are yours.
         </p>
 
-        {applications.length === 0 ? (
-          <div className="mt-6 bg-white/60 border border-plum/10 rounded-2xl p-8 text-center">
-            <p className="text-plum/70">No applications yet.</p>
+        {(campuses.length > 0 || classes.length > 0) && (
+          <div className="flex gap-3 mt-4">
+            {campuses.length > 0 && (
+              <select
+                className="text-sm rounded-lg border border-plum/20 px-3 py-1.5"
+                value={campusFilter}
+                onChange={(e) => setCampusFilter(e.target.value)}
+              >
+                <option value="">All campuses</option>
+                {campuses.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {classes.length > 0 && (
+              <select
+                className="text-sm rounded-lg border border-plum/20 px-3 py-1.5"
+                value={classFilter}
+                onChange={(e) => setClassFilter(e.target.value)}
+              >
+                <option value="">All classes</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.name}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
-        ) : (
-          <div className="mt-6 flex flex-col gap-3">
-            {applications.map((a) => (
+        )}
+
+        {(() => {
+          const filtered = applications.filter(
+            (a) =>
+              (!campusFilter || a.applicant.campusName === campusFilter) &&
+              (!classFilter || a.applicant.className === classFilter)
+          );
+          return filtered.length === 0 ? (
+            <div className="mt-6 bg-white/60 border border-plum/10 rounded-2xl p-8 text-center">
+              <p className="text-plum/70">
+                {applications.length === 0 ? "No applications yet." : "No applications match this filter."}
+              </p>
+            </div>
+          ) : (
+            <div className="mt-6 flex flex-col gap-3">
+              {filtered.map((a) => (
               <div key={a.id} className="bg-white/60 border border-plum/10 rounded-xl p-4">
                 <div className="flex items-center justify-between">
                   <button
@@ -113,6 +162,8 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
                       </p>
                       <p className="text-sm text-plum/60 mt-0.5">
                         {a.applicant.contactEmail} &middot; Score: {a.eligibilityScore ?? 0}
+                        {a.applicant.campusName && ` · ${a.applicant.campusName}`}
+                        {a.applicant.className && ` · ${a.applicant.className}`}
                       </p>
                     </div>
                   </button>
@@ -138,6 +189,13 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
                   <div className="mt-3 pt-3 border-t border-plum/10 text-sm text-plum/70 space-y-1">
                     <p>Phone: {a.applicant.contactPhone || "—"}</p>
                     <p>Submitted: {new Date(a.submittedAt).toLocaleDateString()}</p>
+                    {(a.applicant.campusName || a.applicant.className) && (
+                      <p>
+                        {a.applicant.campusName && `Campus: ${a.applicant.campusName}`}
+                        {a.applicant.campusName && a.applicant.className && " · "}
+                        {a.applicant.className && `Class: ${a.applicant.className}`}
+                      </p>
+                    )}
                     <p className="font-medium text-plum mt-2">Answers</p>
                     {Object.entries(a.applicant.metadata).map(([k, v]) => (
                       <p key={k}>
@@ -147,9 +205,10 @@ export default function ApplicationsReviewPage({ params }: { params: { id: strin
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          );
+        })()}
       </section>
     </main>
   );
