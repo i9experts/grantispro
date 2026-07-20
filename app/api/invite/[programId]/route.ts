@@ -30,8 +30,8 @@ export async function GET(_req: NextRequest, { params }: { params: { programId: 
     },
   });
 
-  if (!program) {
-    return NextResponse.json({ error: "This scholarship program isn't available." }, { status: 404 });
+  if (!program || !program.isActive) {
+    return NextResponse.json({ error: "This scholarship program isn't available for sponsorship right now." }, { status: 404 });
   }
 
   const pledges = await prisma.pledge.findMany({ where: { programId: program.id } });
@@ -101,7 +101,9 @@ const pledgeSchema = z.object({
 
 export async function POST(req: NextRequest, { params }: { params: { programId: string } }) {
   const program = await prisma.scholarshipProgram.findUnique({ where: { id: params.programId } });
-  if (!program) return NextResponse.json({ error: "This scholarship program isn't available." }, { status: 404 });
+  if (!program || !program.isActive) {
+    return NextResponse.json({ error: "This scholarship program isn't available for sponsorship right now." }, { status: 404 });
+  }
 
   const body = await req.json();
   const parsed = pledgeSchema.safeParse(body);

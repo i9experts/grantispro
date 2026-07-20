@@ -406,6 +406,18 @@ multi-page PDF** (`GET /api/reports/applicants/pdf`, paginates
 automatically for long lists, filter shown in the PDF header so it's clear
 what was exported).
 
+**Active/Inactive is now a real, working toggle.** Previously `isActive`
+existed in the schema and the applicant apply link already respected it,
+but there was no clickable UI for it, and — this was the actual bug —
+**the donor invite link never checked it at all**, so setting a program
+inactive would still leave `/invite/[programId]` fully live and accepting
+pledges. Both gaps fixed: the "Active"/"Inactive" badge on the programs
+list is now a real toggle button (with a confirm dialog explaining the
+consequence before you flip it off), and both `/apply/[programId]` and
+`/invite/[programId]` — GET and POST — now consistently check `isActive`
+and show a clean "not available" message instead of a form once a program
+is deactivated.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities

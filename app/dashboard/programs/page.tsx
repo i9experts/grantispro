@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import DashboardLayout from "@/components/dashboard-layout";
 import DeleteButton from "@/components/delete-button";
+import ActiveToggle from "@/components/active-toggle";
 import { Plus, Award } from "lucide-react";
 
 export default async function ProgramsPage() {
@@ -64,13 +65,7 @@ export default async function ProgramsPage() {
                     </p>
                   </div>
                 </div>
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                    p.isActive ? "bg-emerald/10 text-emerald-dark" : "bg-plum/5 text-plum/40"
-                  }`}
-                >
-                  {p.isActive ? "Active" : "Inactive"}
-                </span>
+                <ActiveToggle programId={p.id} isActive={p.isActive} />
               </div>
               <div className="mt-3 pl-4 flex items-center justify-between">
                 <div className="flex gap-4 text-sm">
