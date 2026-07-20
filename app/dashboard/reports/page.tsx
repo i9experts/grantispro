@@ -311,6 +311,8 @@ export default function ReportsPage() {
                   <th className="py-2 pr-3 font-medium">Phone</th>
                   <th className="py-2 pr-3 font-medium">Campus</th>
                   <th className="py-2 pr-3 font-medium">Class</th>
+                  <th className="py-2 pr-3 font-medium">Program</th>
+                  <th className="py-2 pr-3 font-medium">Applied</th>
                   <th className="py-2 pr-3 font-medium">Status</th>
                 </tr>
               </thead>
@@ -323,6 +325,10 @@ export default function ReportsPage() {
                     <td className="py-2 pr-3 text-plum/70">{a.contactPhone ?? "—"}</td>
                     <td className="py-2 pr-3 text-plum/70">{a.campusName ?? "—"}</td>
                     <td className="py-2 pr-3 text-plum/70">{a.className ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.latestProgram ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">
+                      {a.appliedDate ? new Date(a.appliedDate).toLocaleDateString() : "—"}
+                    </td>
                     <td className="py-2 pr-3 text-plum/70">{a.latestStatus?.replace("_", " ") ?? "—"}</td>
                   </tr>
                 ))}

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         campus: true,
         schoolClass: true,
         applications: {
-          select: { status: true, program: { select: { name: true } } },
+          select: { status: true, submittedAt: true, program: { select: { name: true } } },
           orderBy: { submittedAt: "desc" },
           take: 1,
         },
@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
         isZakatEligible: a.isZakatEligible,
         latestProgram: a.applications[0]?.program.name ?? null,
         latestStatus: a.applications[0]?.status ?? null,
+        appliedDate: a.applications[0]?.submittedAt ?? null,
       }))
     );
 

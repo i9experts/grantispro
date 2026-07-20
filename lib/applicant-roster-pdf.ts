@@ -15,17 +15,20 @@ export type RosterApplicant = {
   isZakatEligible: boolean;
   latestProgram: string | null;
   latestStatus: string | null;
+  appliedDate: string | Date | null;
 };
 
 const COLUMNS = [
-  { key: "fullName", label: "Student Name", width: 110 },
-  { key: "guardianName", label: "Parent / Guardian", width: 100 },
-  { key: "contactEmail", label: "Email", width: 140 },
-  { key: "contactPhone", label: "Phone", width: 85 },
-  { key: "campusName", label: "Campus", width: 80 },
-  { key: "className", label: "Class", width: 65 },
-  { key: "latestStatus", label: "Status", width: 75 },
-  { key: "isZakatEligible", label: "Zakat", width: 45 },
+  { key: "fullName", label: "Student Name", width: 90 },
+  { key: "guardianName", label: "Parent / Guardian", width: 78 },
+  { key: "contactEmail", label: "Email", width: 112 },
+  { key: "contactPhone", label: "Phone", width: 62 },
+  { key: "campusName", label: "Campus", width: 58 },
+  { key: "className", label: "Class", width: 48 },
+  { key: "latestProgram", label: "Program", width: 85 },
+  { key: "appliedDate", label: "Applied", width: 58 },
+  { key: "latestStatus", label: "Status", width: 55 },
+  { key: "isZakatEligible", label: "Zakat", width: 36 },
 ] as const;
 
 function truncate(font: any, text: string, size: number, maxWidth: number): string {
@@ -104,6 +107,8 @@ export async function generateApplicantRosterPdf(
       contactPhone: a.contactPhone ?? "—",
       campusName: a.campusName ?? "—",
       className: a.className ?? "—",
+      latestProgram: a.latestProgram ?? "—",
+      appliedDate: a.appliedDate ? new Date(a.appliedDate).toLocaleDateString("en-US", { year: "2-digit", month: "short", day: "numeric" }) : "—",
       latestStatus: a.latestStatus ? a.latestStatus.replace("_", " ") : "—",
       isZakatEligible: a.isZakatEligible ? "Yes" : "—",
     };
