@@ -399,6 +399,13 @@ scrollwork, so the border is a clean double gold line instead. Everything
 else (logo, campus tag, script heading, wording, signature) matches
 closely.
 
+**Applicant roster report** — added to `/dashboard/reports`. Filterable by
+campus and class, shows an on-screen table (name, parent/guardian, email,
+phone, campus, class, latest application status) plus a **downloadable
+multi-page PDF** (`GET /api/reports/applicants/pdf`, paginates
+automatically for long lists, filter shown in the PDF header so it's clear
+what was exported).
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities

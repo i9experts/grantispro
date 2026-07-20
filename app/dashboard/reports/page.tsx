@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import StatCard from "@/components/stat-card";
 import { formatCurrency, fundCategoryLabel } from "@/lib/currency";
-import { Download, BarChart3 } from "lucide-react";
+import { Download, BarChart3, Users } from "lucide-react";
 
 type Summary = {
   tenantName: string;
@@ -84,6 +84,13 @@ export default function ReportsPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const [campuses, setCampuses] = useState<{ id: string; name: string }[]>([]);
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [rosterCampusFilter, setRosterCampusFilter] = useState("");
+  const [rosterClassFilter, setRosterClassFilter] = useState("");
+  const [roster, setRoster] = useState<any[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(true);
+
   useEffect(() => {
     Promise.all([fetch("/api/me").then((r) => r.json()), fetch("/api/reports/summary").then((r) => r.json())]).then(
       ([meData, summaryData]) => {
@@ -92,7 +99,22 @@ export default function ReportsPage() {
         setLoading(false);
       }
     );
+    fetch("/api/campuses").then((r) => r.json()).then((d) => setCampuses(d.campuses ?? []));
+    fetch("/api/classes").then((r) => r.json()).then((d) => setClasses(d.classes ?? []));
   }, []);
+
+  useEffect(() => {
+    setRosterLoading(true);
+    const params = new URLSearchParams();
+    if (rosterCampusFilter) params.set("campusId", rosterCampusFilter);
+    if (rosterClassFilter) params.set("classId", rosterClassFilter);
+    fetch(`/api/reports/applicants?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setRoster(d.applicants ?? []);
+        setRosterLoading(false);
+      });
+  }, [rosterCampusFilter, rosterClassFilter]);
 
   if (loading || !summary) {
     return (
@@ -224,6 +246,88 @@ export default function ReportsPage() {
                 </span>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+      <div className="mt-4 bg-white rounded-2xl shadow-card border border-plum/5 p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h2 className="font-medium text-plum flex items-center gap-2">
+            <Users size={17} strokeWidth={1.75} />
+            Applicant roster
+          </h2>
+          <div className="flex items-center gap-2">
+            {campuses.length > 0 && (
+              <select
+                className="text-sm rounded-lg border border-plum/20 px-2.5 py-1.5"
+                value={rosterCampusFilter}
+                onChange={(e) => setRosterCampusFilter(e.target.value)}
+              >
+                <option value="">All campuses</option>
+                {campuses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {classes.length > 0 && (
+              <select
+                className="text-sm rounded-lg border border-plum/20 px-2.5 py-1.5"
+                value={rosterClassFilter}
+                onChange={(e) => setRosterClassFilter(e.target.value)}
+              >
+                <option value="">All classes</option>
+                {classes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <a
+              href={`/api/reports/applicants/pdf?${rosterCampusFilter ? `campusId=${rosterCampusFilter}&` : ""}${
+                rosterClassFilter ? `classId=${rosterClassFilter}` : ""
+              }`}
+              className="bg-plum text-ivory rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-plum-deep transition flex items-center gap-1.5"
+            >
+              <Download size={14} strokeWidth={2} />
+              PDF
+            </a>
+          </div>
+        </div>
+
+        {rosterLoading ? (
+          <p className="text-sm text-plum/40">Loading…</p>
+        ) : roster.length === 0 ? (
+          <p className="text-sm text-plum/40">No students match this filter.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-plum/50 border-b border-plum/10">
+                  <th className="py-2 pr-3 font-medium">Name</th>
+                  <th className="py-2 pr-3 font-medium">Parent / Guardian</th>
+                  <th className="py-2 pr-3 font-medium">Email</th>
+                  <th className="py-2 pr-3 font-medium">Phone</th>
+                  <th className="py-2 pr-3 font-medium">Campus</th>
+                  <th className="py-2 pr-3 font-medium">Class</th>
+                  <th className="py-2 pr-3 font-medium">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roster.map((a, i) => (
+                  <tr key={i} className="border-b border-plum/5 last:border-0">
+                    <td className="py-2 pr-3 text-plum">{a.fullName}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.guardianName ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.contactEmail ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.contactPhone ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.campusName ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.className ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.latestStatus?.replace("_", " ") ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
