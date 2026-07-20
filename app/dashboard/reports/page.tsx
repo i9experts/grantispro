@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/dashboard-layout";
 import StatCard from "@/components/stat-card";
 import { formatCurrency, fundCategoryLabel } from "@/lib/currency";
-import { Download, BarChart3, Users } from "lucide-react";
+import { Download, BarChart3, Users, GraduationCap } from "lucide-react";
 
 type Summary = {
   tenantName: string;
@@ -91,6 +91,10 @@ export default function ReportsPage() {
   const [roster, setRoster] = useState<any[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
 
+  const [awardsCampusFilter, setAwardsCampusFilter] = useState("");
+  const [awardsList, setAwardsList] = useState<any[]>([]);
+  const [awardsLoading, setAwardsLoading] = useState(true);
+
   useEffect(() => {
     Promise.all([fetch("/api/me").then((r) => r.json()), fetch("/api/reports/summary").then((r) => r.json())]).then(
       ([meData, summaryData]) => {
@@ -115,6 +119,18 @@ export default function ReportsPage() {
         setRosterLoading(false);
       });
   }, [rosterCampusFilter, rosterClassFilter]);
+
+  useEffect(() => {
+    setAwardsLoading(true);
+    const params = new URLSearchParams();
+    if (awardsCampusFilter) params.set("campusId", awardsCampusFilter);
+    fetch(`/api/reports/awards?${params.toString()}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setAwardsList(d.awards ?? []);
+        setAwardsLoading(false);
+      });
+  }, [awardsCampusFilter]);
 
   if (loading || !summary) {
     return (
@@ -334,6 +350,84 @@ export default function ReportsPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+      </div>
+      <div className="mt-4 bg-white rounded-2xl shadow-card border border-plum/5 p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h2 className="font-medium text-plum flex items-center gap-2">
+            <GraduationCap size={17} strokeWidth={1.75} />
+            Scholarship awards summary — by campus
+          </h2>
+          <div className="flex items-center gap-2">
+            {campuses.length > 0 && (
+              <select
+                className="text-sm rounded-lg border border-plum/20 px-2.5 py-1.5"
+                value={awardsCampusFilter}
+                onChange={(e) => setAwardsCampusFilter(e.target.value)}
+              >
+                <option value="">All campuses</option>
+                {campuses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <a
+              href={`/api/reports/awards/pdf${awardsCampusFilter ? `?campusId=${awardsCampusFilter}` : ""}`}
+              className="bg-plum text-ivory rounded-lg px-3 py-1.5 text-sm font-medium hover:bg-plum-deep transition flex items-center gap-1.5"
+            >
+              <Download size={14} strokeWidth={2} />
+              PDF (grouped by campus, with subtotals)
+            </a>
+          </div>
+        </div>
+
+        {awardsLoading ? (
+          <p className="text-sm text-plum/40">Loading…</p>
+        ) : awardsList.length === 0 ? (
+          <p className="text-sm text-plum/40">No scholarships awarded yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-plum/50 border-b border-plum/10">
+                  <th className="py-2 pr-3 font-medium">Student</th>
+                  <th className="py-2 pr-3 font-medium">Parent / Guardian</th>
+                  <th className="py-2 pr-3 font-medium">Phone</th>
+                  <th className="py-2 pr-3 font-medium">Campus</th>
+                  <th className="py-2 pr-3 font-medium">Class</th>
+                  <th className="py-2 pr-3 font-medium">Program</th>
+                  <th className="py-2 pr-3 font-medium">Award type</th>
+                  <th className="py-2 pr-3 font-medium">Amount</th>
+                  <th className="py-2 pr-3 font-medium">Duration</th>
+                  <th className="py-2 pr-3 font-medium">Reason</th>
+                </tr>
+              </thead>
+              <tbody>
+                {awardsList.map((a, i) => (
+                  <tr key={i} className="border-b border-plum/5 last:border-0">
+                    <td className="py-2 pr-3 text-plum">{a.studentName}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.guardianName ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.contactPhone ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.campusName ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.className ?? "—"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.programName ?? "Direct grant"}</td>
+                    <td className="py-2 pr-3 text-plum/70">
+                      {a.awardType === "FULL" ? "Full" : a.awardType === "PARTIAL_PERCENT" ? `${a.percentValue}% Partial` : "Fixed"}
+                    </td>
+                    <td className="py-2 pr-3 text-plum/70">{formatCurrency(a.amount, a.currency)}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.durationMonths ? `${a.durationMonths} mo` : "Ongoing"}</td>
+                    <td className="py-2 pr-3 text-plum/70">{a.reason ?? "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="text-xs text-plum/40 mt-3">
+              This preview is a flat list — the downloaded PDF groups these by campus with
+              per-campus and grand-total subtotals.
+            </p>
           </div>
         )}
       </div>

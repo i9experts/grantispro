@@ -418,6 +418,18 @@ consequence before you flip it off), and both `/apply/[programId]` and
 and show a clean "not available" message instead of a form once a program
 is deactivated.
 
+**Scholarship awards summary report** — added to `/dashboard/reports`,
+genuinely grouped by campus (not just filtered): S#, student name,
+parent/guardian, phone, class, program (or "Direct grant" for
+administratively-granted awards with no formal application), award type
+(Full / X% Partial / Fixed), amount, duration, and reason. The **PDF**
+version (`GET /api/reports/awards/pdf`) organizes awards into a section
+per campus with a **subtotal per campus** (grouped by currency, since
+amounts in different currencies can't be meaningfully summed together)
+and a **grand total** at the end. The on-screen preview is a flatter
+sortable table for simplicity — the full grouped/subtotaled treatment is
+in the PDF, which is what "summary report" really calls for.
+
 **Not yet built (next milestones, per the PRD's Phase 1 scope):**
 1. Cloudflare R2 document upload (see gap above)
 2. CSV/Excel export for all core entities
